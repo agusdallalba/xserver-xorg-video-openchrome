@@ -1,0 +1,72 @@
+xserver-xorg-video-openchrome (1:0.2.901+svn532-1) experimental; urgency=low
+
+  * New upstream snapshot
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 24 Feb 2008 18:45:16 -0600
+
+xserver-xorg-video-openchrome (1:0.2.901+svn502-1) experimental; urgency=low
+
+  * New upstream release
+
+ -- Raphael Geissert <atomo64@gmail.com>  Mon, 14 Jan 2008 17:55:56 -0600
+
+xserver-xorg-video-openchrome (1:0.2.901+svn491-1) experimental; urgency=low
+
+  * New upstream release
+  * Merged binary packages (merged overrides/*, *.install, and added Provides)
+  * Added epoch because of ubuntu's epoch addition
+  * debian/rules: set the correct Provides of -video and Depends on -core
+    Code taken from xserver-xorg-video-via-0.2.2's debian/xsfbs/xsfbs.mk
+  * debian/{rules,control}: rewritten so cdbs is NOT used
+  * Bumped DH_COMPAT to 6
+  * debian/control: Added Vcs-* entries
+  * debian/control: Do not conflict with xserver-xorg-video-{via,unichrome}
+    The driver is for some time now called 'openchrome'
+
+ -- Raphael Geissert <atomo64@gmail.com>  Mon, 14 Jan 2008 17:12:00 -0600
+
+xserver-xorg-video-openchrome (0.2.900+svn470-1) experimental; urgency=low
+
+  * New upstream release
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sat, 22 Dec 2007 12:33:17 -0600
+
+xserver-xorg-video-openchrome (0.2.900+svn452-1) experimental; urgency=low
+
+  * New upstream release
+  * clean target now removes some autogen.sh generated files
+  * Updated to Standards-Version: 3.7.3, no change needed
+  * Removed non-standard architecture lpia from control
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 09 Dec 2007 20:28:46 -0600
+
+xserver-xorg-video-openchrome (0.2.900+svn447-1) experimental; urgency=low
+
+  * New upstream release
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 25 Nov 2007 20:31:08 -0600
+
+xserver-xorg-video-openchrome (0.2.900+svn423-1) experimental; urgency=low
+
+  * New upstream release
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 28 Oct 2007 19:51:44 -0600
+
+xserver-xorg-video-openchrome (0.2.6+svn357-0ubuntu3) gutsy; urgency=low
+
+  * Add lpia to all binary packages.
+
+ -- Mario Limonciello <superm1@ubuntu.com>  Thu, 06 Sep 2007 09:59:20 -0500
+
+xserver-xorg-video-openchrome (0.2.6+svn357-0ubuntu2) gutsy; urgency=low
+
+  * Only build for i386, amd64, lpia.  Hardware isn't available
+    on sparc, ppc, ia64, and FTBFS on these arch anyhow.
+
+ -- Mario Limonciello <superm1@ubuntu.com>  Thu, 06 Sep 2007 09:51:48 -0500
+
+xserver-xorg-video-openchrome (0.2.6+svn357-0ubuntu1) gutsy; urgency=low
+
+  * Initial Release.
+
+ -- Mario Limonciello <superm1@ubuntu.com>  Fri, 27 Jul 2007 17:57:42 -0500

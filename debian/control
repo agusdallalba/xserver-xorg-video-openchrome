@@ -1,0 +1,29 @@
+Source: xserver-xorg-video-openchrome
+Section: x11
+Priority: optional
+Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
+Uploaders: Raphael Geissert <atomo64@gmail.com>
+Build-Depends: debhelper (>= 6), autotools-dev, autoconf, automake, libtool, pkg-config, xserver-xorg-dev (>= 1:1.1.1), x11proto-core-dev, x11proto-fonts-dev, x11proto-randr-dev, x11proto-render-dev, x11proto-xext-dev, x11proto-xf86dri-dev, x11proto-video-dev, x11proto-gl-dev, libdrm-dev (>> 2.0), libx11-dev, libgl1-mesa-dev | libgl1-dev, libxvmc-dev
+Standards-Version: 3.7.3
+Homepage: http://www.openchrome.org
+Vcs-Git: git://git.debian.org/git/pkg-xorg/driver/xserver-xorg-video-openchrome
+Vcs-Browser: http://git.debian.org/?p=pkg-xorg/driver/xserver-xorg-video-openchrome.git
+
+Package: xserver-xorg-video-openchrome
+Architecture: i386 amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${xserver:Depends}
+Provides: ${xviddriver:Provides}
+Replaces: xserver-xorg-video-via, xserver-xorg-video-unichrome, libchromexvmc1, libchromexvmcpro1
+Description: X.Org X server -- VIA display driver
+ OpenChrome is a project for the development of free and open-source software
+ for the VIA UniChrome video chipsets.
+ .
+ Originally called the 'snapshot' release, since it was a snapshot of an
+ experimental branch of the unichrome cvs code, this is a continued development
+ of the open source unichrome driver (from <URL:http://unichrome.sf.net>) which
+ also incorporates support for the unichrome-pro chipsets.
+ .
+ Support for hardware acceleration (XvMC) for all chipsets has subsequently
+ been ripped out of the unichrome.sf.net driver. Therefore your only option if
+ you wish to make use of the acceleration features of your VIA chip with free
+ and open-source drivers is to use this version of the driver.
