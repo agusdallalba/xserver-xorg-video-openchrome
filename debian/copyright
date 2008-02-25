@@ -11,13 +11,14 @@ Copyright (c) 1998-2003 VIA Technologies, Inc. All Rights Reserved.
 Copyright (c) 2000 Intel Corporation. All rights reserved.
 Copyright (c) 2001-2003 S3 Graphics, Inc. All Rights Reserved.
 Copyright (c) 2003 Red Hat, Inc. All Rights Reserved.
-Copyright (c) 2004-2007 The Unichrome Project. All rights reserved.
+Copyright (c) 2004-2005 The Unichrome Project. All rights reserved.
 Copyright (c) 2004-2006 Andreas Robinson. All Rights Reserved.
 Copyright (c) 2004-2006 Bernhard Rosenkraenzer. All Rights Reserved.
 Copyright (c) 2004-2006 Ivor Hewitt. All Rights Reserved.
 Copyright (c) 2004-2006 Luc Verhaegen. All Rights Reserved.
 Copyright (c) 2004-2006 Terry Barnaby. All Rights Reserved.
 Copyright (c) 2004-2006 Thomas Hellstrom. All Rights Reserved.
+Copyright (c) 2005-2008 The Openchrome Project  [openchrome.org]
 
 Application License:
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -54,7 +55,7 @@ Packaging License:
  License along with this package; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-On Debian & Ubuntu systems, a complete copy of the GPL can be found under
+On Debian systems, a complete copy of the GPL can be found under
 /usr/share/common-licenses/GPL-3
 
 The Debian packaging is Copyright 2007-2008 by Raphael Geissert <atomo64@gmail.com>
