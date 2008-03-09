@@ -2,15 +2,6 @@
 
 PACKAGE=xserver-xorg-video-openchrome
 
-DEB_VERSION := $(shell dpkg-parsechangelog | egrep '^Version:' | cut -f 2 -d ' ')
-DEB_NOEPOCH_VERSION := $(shell echo $(DEB_VERSION) | cut -d: -f2-)
-DEB_UPSTREAM_VERSION := $(shell echo $(DEB_NOEPOCH_VERSION) | sed 's/-[^-]*$$//')
-DEB_REAL_UPSTREAM_VERSION := $(shell echo "$(DEB_UPSTREAM_VERSION)" | cut '-d+' -f1)
-SVN_REVISION := $(shell echo "$(DEB_UPSTREAM_VERSION)" | cut '-d+' -f2 | sed 's/svn//')
-SVN_BRANCH += http://svn.openchrome.org/svn/trunk
-DIR_NAME = $(PACKAGE)-$(DEB_REAL_UPSTREAM_VERSION)+svn$(SVN_REVISION)
-TARFILE += $(PACKAGE)_$(DEB_REAL_UPSTREAM_VERSION)+svn$(SVN_REVISION).orig.tar.gz
-
 # taken from xserver-xorg-video-via-0.2.2's debian/xsfbs/xsfbs.mk
 SERVERMINVERS = $(shell cat /usr/share/xserver-xorg/serverminver 2>/dev/null)
 SERVER_DEPENDS = xserver-xorg-core (>= $(SERVERMINVERS))
@@ -43,14 +34,6 @@ install: build
 serverabi:
 	echo "xserver:Depends=$(SERVER_DEPENDS)" >> debian/$(PACKAGE).substvars
 	echo "xviddriver:Provides=$(VIDDRIVER_PROVIDES)" >> debian/$(PACKAGE).substvars
-
-.PHONY: get-orig-source
-get-orig-source:
-	svn export -r $(SVN_REVISION) $(SVN_BRANCH) $(DIR_NAME)
-	tar czf $(CURDIR)/../$(TARFILE) $(DIR_NAME)
-	rm -rf $(CURDIR)/$(DIR_NAME)
-
-../$(TARFILE): get-orig-source
 
 debian/configured-stamp:
 	./autogen.sh $(DEB_CONFIGURE_EXTRA_FLAGS)
