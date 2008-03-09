@@ -1,11 +1,12 @@
 xserver-xorg-video-openchrome (1:0.2.901+svn532-1) experimental; urgency=low
 
+  * First upload to Debian (Closes: #464848)
   * New upstream snapshot
   * Updated copyright information
   * Conflicts: libchromexvmc1, libchromexvmcpro1 so Replaces takes
      effect
 
- -- Raphael Geissert <atomo64@gmail.com>  Sun, 24 Feb 2008 18:55:27 -0600
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 09 Mar 2008 16:57:23 -0600
 
 xserver-xorg-video-openchrome (1:0.2.901+svn502-1) experimental; urgency=low
 
