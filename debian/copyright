@@ -4,9 +4,6 @@ Tue, 27 July 2007 16:41:23 -0500
 This original source for this package was obtained via the upstream
 svn branch at http://svn.openchrome.org/svn/trunk
 
-You can grab the version currently in use by this revision by
-running 'debian/rules get-orig-source'.
-
 Copyright (c) 1998-2003 VIA Technologies, Inc. All Rights Reserved.
 Copyright (c) 2000 Intel Corporation. All rights reserved.
 Copyright (c) 2001-2003 S3 Graphics, Inc. All Rights Reserved.
@@ -62,4 +59,3 @@ The Debian packaging is Copyright 2007-2008 by Raphael Geissert <atomo64@gmail.c
 based on the work © 2007 by Mario Limonciello <superm1@ubuntu.com> which was
 based upon the work by Eric Work <work.eric@gmail.com> and is licensed 
 under the GPL.
-
