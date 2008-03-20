@@ -60,7 +60,7 @@ binary-arch: serverabi install
 	dh_testdir
 	dh_testroot
 	dh_installchangelogs ChangeLog
-	dh_installdocs release_notes-0.3.0
+	dh_installdocs NEWS
 	dh_strip
 	dh_compress
 	dh_fixperms
