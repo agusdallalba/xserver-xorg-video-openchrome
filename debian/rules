@@ -61,6 +61,7 @@ binary-arch: serverabi install
 	dh_testroot
 	dh_installchangelogs ChangeLog
 	dh_installdocs NEWS
+	install -D debian/overrides  debian/$(PACKAGE)/usr/share/lintian/overrides/$(PACKAGE)
 	dh_strip
 	dh_compress
 	dh_fixperms
