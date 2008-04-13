@@ -600,6 +600,9 @@ via_pci_probe(DriverPtr driver, int entity_num,
                 "VIA Technologies does not support this driver in any way.\n");
         xf86Msg(X_NOTICE,
                 "For support, please refer to http://www.openchrome.org/.\n");
+#ifdef BUILDCOMMENT
+        xf86Msg(X_NOTICE, BUILDCOMMENT"\n");
+#endif
     }
     return scrn != NULL;
 }
@@ -1062,7 +1065,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
 #ifdef XSERVER_LIBPCIACCESS
         struct pci_device *bridge = via_host_bridge();
 
-        pci_device_cfg_read_u32(bridge, &pVia->ChipRev, 0xF6);
+        pci_device_cfg_read_u8(bridge, &pVia->ChipRev, 0xF6);
 #else
         pVia->ChipRev = pciReadByte(pciTag(0, 0, 0), 0xF6);
 #endif
