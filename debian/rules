@@ -37,7 +37,7 @@ configure: patch
 	./autogen.sh
 
 .PHONY: clean
-clean: unpatch
+clean: xsfclean unpatch
 	dh_testdir
 	dh_testroot
 	dh_clean
@@ -47,7 +47,7 @@ clean: unpatch
 		configure depcomp install-sh libxvmc/Makefile.in ltmain.sh \
 		Makefile.in man/Makefile.in man/openchrome.man missing src/Makefile.in
 	$(RM) -r $(DEB_BUILDDIR)
-	$(RM) debian/autotools-files-stamp debian/build-stamp
+	$(RM) debian/build-stamp
 
 .PHONY: binary-indep
 binary-indep:
