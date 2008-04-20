@@ -6,7 +6,7 @@ xserver-xorg-video-openchrome (1:0.2.902+svn566-1) unstable; urgency=low
   * Conflicts: libchromexvmc1, libchromexvmcpro1 so Replaces takes
      effect
 
- -- Raphael Geissert <atomo64@gmail.com>  Sat, 12 Apr 2008 19:56:53 -0500
+ -- Raphael Geissert <atomo64@gmail.com>  Sat, 19 Apr 2008 19:51:43 -0500
 
 xserver-xorg-video-openchrome (1:0.2.901+svn502-1) experimental; urgency=low
 

@@ -3,11 +3,7 @@
 PACKAGE = xserver-xorg-video-openchrome
 DEB_BUILDDIR = obj-$(DEB_BUILD_GNU_TYPE)
 
-# taken from xserver-xorg-video-via-0.2.2's debian/xsfbs/xsfbs.mk
-SERVERMINVERS = $(shell cat /usr/share/xserver-xorg/serverminver 2>/dev/null)
-SERVER_DEPENDS = xserver-xorg-core (>= $(SERVERMINVERS))
-VIDEOABI = $(shell cat /usr/share/xserver-xorg/videoabiver 2>/dev/null)
-VIDDRIVER_PROVIDES = xserver-xorg-video-$(VIDEOABI)
+include debian/xsfbs/xsfbs.mk
 
 DEB_CONFIGURE_EXTRA_FLAGS := \
 	--prefix=/usr \
@@ -19,8 +15,6 @@ DEB_CONFIGURE_EXTRA_FLAGS += \
 	--enable-debug=yes \
 	--enable-xv-debug=yes
 endif
-
-include /usr/share/quilt/quilt.make
 
 .PHONY: build
 build: debian/build-stamp
