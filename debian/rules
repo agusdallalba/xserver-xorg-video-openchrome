@@ -2,14 +2,20 @@
 
 PACKAGE = xserver-xorg-video-openchrome
 DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+DEB_HOST_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILDDIR = obj-$(DEB_BUILD_GNU_TYPE)
 
 include debian/xsfbs/xsfbs.mk
 
 DEB_CONFIGURE_EXTRA_FLAGS := \
+	--build=$(DEB_BUILD_GNU_TYPE) \
 	--prefix=/usr \
 	--disable-maintainer-mode \
 	--disable-dependency-tracking
+
+ifneq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
+DEB_CONFIGURE_EXTRA_FLAGS += --host=$(DEB_HOST_GNU_TYPE)
+endif
 
 ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
 DEB_CONFIGURE_EXTRA_FLAGS += \
