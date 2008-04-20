@@ -29,11 +29,6 @@ install: build
 	dh_testroot
 	$(MAKE) -C $(DEB_BUILDDIR) install DESTDIR=$(CURDIR)/debian/$(PACKAGE)/
 
-.PHONY: serverabi
-serverabi:
-	echo "xserver:Depends=$(SERVER_DEPENDS)" >> debian/$(PACKAGE).substvars
-	echo "xviddriver:Provides=$(VIDDRIVER_PROVIDES)" >> debian/$(PACKAGE).substvars
-
 $(DEB_BUILDDIR)/config.status: configure
 	mkdir $(DEB_BUILDDIR)
 	cd $(DEB_BUILDDIR) && ../configure $(DEB_CONFIGURE_EXTRA_FLAGS)
