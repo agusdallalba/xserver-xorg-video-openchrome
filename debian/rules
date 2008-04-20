@@ -1,6 +1,7 @@
 #!/usr/bin/make -f
 
 PACKAGE = xserver-xorg-video-openchrome
+DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 DEB_BUILDDIR = obj-$(DEB_BUILD_GNU_TYPE)
 
 include debian/xsfbs/xsfbs.mk
