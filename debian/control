@@ -15,7 +15,7 @@ Architecture: i386 amd64
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${xserver:Depends}
 Provides: ${xviddriver:Provides}
 Conflicts: libchromexvmc1, libchromexvmcpro1
-Replaces: xserver-xorg-video-via, xserver-xorg-video-unichrome, libchromexvmc1, libchromexvmcpro1
+Replaces: libchromexvmc1, libchromexvmcpro1
 Description: X.Org X server -- VIA display driver
  OpenChrome is a project for the development of free and open-source drivers
  for the VIA UniChrome video chipsets.
