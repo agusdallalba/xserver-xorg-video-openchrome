@@ -1,9 +1,12 @@
 #!/usr/bin/make -f
 
 PACKAGE = xserver-xorg-video-openchrome
+
 DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 DEB_HOST_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILDDIR = obj-$(DEB_BUILD_GNU_TYPE)
+
+export DH_ALWAYS_EXCLUDE=.la
 
 include debian/xsfbs/xsfbs.mk
 
@@ -34,7 +37,8 @@ debian/build-stamp: $(DEB_BUILDDIR)/config.status
 install: build
 	dh_testdir
 	dh_testroot
-	$(MAKE) -C $(DEB_BUILDDIR) install DESTDIR=$(CURDIR)/debian/$(PACKAGE)/
+	$(MAKE) -C $(DEB_BUILDDIR) install DESTDIR=$(CURDIR)/debian/tmp/
+	dh_install debian/tmp/*
 
 $(DEB_BUILDDIR)/config.status: configure
 	mkdir $(DEB_BUILDDIR)
