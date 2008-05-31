@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome (1:0.2.902+svn569-1) unstable; urgency=low
+xserver-xorg-video-openchrome (1:0.2.902+svn570-1) unstable; urgency=low
 
   * First upload to Debian (Closes: #464848)
   * New upstream release + snapshot
