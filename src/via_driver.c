@@ -824,11 +824,13 @@ VIASetupDefaultOptions(ScrnInfoPtr pScrn)
             pVia->DRIIrqEnable = FALSE;
             break;
         case VIA_VM800:
+            pVia->VideoEngine = VIDEO_ENGINE_CME;
             pVia->agpEnable = FALSE;
             break;
         case VIA_K8M890:
             pVia->VideoEngine = VIDEO_ENGINE_CME;
             pVia->agpEnable = FALSE;
+            pVia->dmaXV = FALSE;
             break;
         case VIA_P4M900:
             pVia->VideoEngine = VIDEO_ENGINE_CME;
@@ -845,6 +847,7 @@ VIASetupDefaultOptions(ScrnInfoPtr pScrn)
             break;
         case VIA_P4M890:
             pVia->VideoEngine = VIDEO_ENGINE_CME;
+            pVia->dmaXV = FALSE;
             break;
     }
 
