@@ -27,8 +27,8 @@ DEB_CONFIGURE_EXTRA_FLAGS += \
 endif
 
 .PHONY: build
-build: patch debian/build-stamp
-debian/build-stamp: $(DEB_BUILDDIR)/config.status
+build: debian/build-stamp
+debian/build-stamp: $(STAMP_DIR)/patch $(DEB_BUILDDIR)/config.status
 	dh_testdir
 	$(MAKE) -C $(DEB_BUILDDIR)
 	touch $@
