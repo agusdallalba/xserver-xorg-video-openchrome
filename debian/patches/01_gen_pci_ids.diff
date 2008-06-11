@@ -1,8 +1,11 @@
---- a/src/Makefile.am.orig	2008-01-09 02:50:10.000000000 +0200
-+++ b/src/Makefile.am	2008-01-09 02:59:40.000000000 +0200
-@@ -84,6 +84,12 @@
-          via_xvmc.h 
+Generate a list of known PCIs for xorg to auto-detect them and use openchrome for those
+Index: xserver-xorg-video-openchrome/src/Makefile.am
+===================================================================
+--- xserver-xorg-video-openchrome.orig/src/Makefile.am
++++ xserver-xorg-video-openchrome/src/Makefile.am
+@@ -86,6 +86,12 @@ EXTRA_DIST += \
  endif
+ 
  
 +pcidatadir = $(datadir)/xserver-xorg/pci
 +pcidata_DATA = openchrome.ids
@@ -11,5 +14,5 @@
 +	awk '/^#define.*PCI_CHIP/ {print $$3}' ${srcdir}/via_id.h | sed -e 's/0x/1106/' > openchrome.ids
 +
  via_driver.lo: svnversion.h
- svnversion.h:
- 	@if [ -f svnrelease.h ]; then \
+ svnversion.h: $(openchrome_drv_la_SOURCES)
+ 	@if [ -d .svn ]; then \
