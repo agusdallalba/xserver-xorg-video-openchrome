@@ -13,8 +13,10 @@ xserver-xorg-video-openchrome (1:0.2.902+svn575-1) UNRELEASED; urgency=low
   * New upstream snapshot.
     + Fixes some Xv issues.
     + Disables XvDMA for P4M890 and K8M890, as it is broken.
+  * Bump Standards-Version to 3.8.0
+    + Use find instead of findstring for DEB_BUILD_OPTIONS parsing in d/rules
 
- -- Raphael Geissert <atomo64@gmail.com>  Tue, 10 Jun 2008 19:01:30 -0500
+ -- Raphael Geissert <atomo64@gmail.com>  Tue, 10 Jun 2008 20:06:13 -0500
 
 xserver-xorg-video-openchrome (1:0.2.902+svn570-1) unstable; urgency=low
 
