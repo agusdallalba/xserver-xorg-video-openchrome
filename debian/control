@@ -22,7 +22,7 @@ Description: X.Org X server -- VIA display driver
  .
  Originally called the 'snapshot' release, since it was a snapshot of an
  experimental branch of the unichrome cvs code, this is a continued development
- of the open source unichrome driver (from <URL:http://unichrome.sf.net>) which
+ of the open source unichrome driver (from http://unichrome.sf.net) which
  also incorporates support for the unichrome-pro chipsets.
  .
  Support for hardware acceleration (XvMC) for all chipsets has subsequently

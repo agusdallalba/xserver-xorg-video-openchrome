@@ -15,8 +15,10 @@ xserver-xorg-video-openchrome (1:0.2.902+svn575-1) UNRELEASED; urgency=low
     + Disables XvDMA for P4M890 and K8M890, as it is broken.
   * Bump Standards-Version to 3.8.0
     + Use find instead of findstring for DEB_BUILD_OPTIONS parsing in d/rules
+  * Stripped enclosing chevrons from the unichrome link (Closes: #485957)
+    - p.d.o displays the link with or without them, and looks ugly
 
- -- Raphael Geissert <atomo64@gmail.com>  Tue, 10 Jun 2008 20:06:13 -0500
+ -- Raphael Geissert <atomo64@gmail.com>  Thu, 12 Jun 2008 11:52:35 -0500
 
 xserver-xorg-video-openchrome (1:0.2.902+svn570-1) unstable; urgency=low
 
