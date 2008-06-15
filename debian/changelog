@@ -17,8 +17,9 @@ xserver-xorg-video-openchrome (1:0.2.902+svn575-1) UNRELEASED; urgency=low
     + Use find instead of findstring for DEB_BUILD_OPTIONS parsing in d/rules
   * Stripped enclosing chevrons from the unichrome link (Closes: #485957)
     - p.d.o displays the link with or without them, and looks ugly
+  * Removed a useless lintian override
 
- -- Raphael Geissert <atomo64@gmail.com>  Thu, 12 Jun 2008 11:52:35 -0500
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 15 Jun 2008 16:38:30 -0500
 
 xserver-xorg-video-openchrome (1:0.2.902+svn570-1) unstable; urgency=low
 
