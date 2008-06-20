@@ -19,8 +19,9 @@ xserver-xorg-video-openchrome (1:0.2.902+svn577-1) UNRELEASED; urgency=low
   * Stripped enclosing chevrons from the unichrome link (Closes: #485957)
     - p.d.o displays the link with or without them, and looks ugly
   * Removed a useless lintian override
+  * Install a symlink to xserver-xorg-core's bugreport script
 
- -- Raphael Geissert <atomo64@gmail.com>  Thu, 19 Jun 2008 22:10:17 -0500
+ -- Raphael Geissert <atomo64@gmail.com>  Thu, 19 Jun 2008 23:39:43 -0500
 
 xserver-xorg-video-openchrome (1:0.2.902+svn570-1) unstable; urgency=low
 
