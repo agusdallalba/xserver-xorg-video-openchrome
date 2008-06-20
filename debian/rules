@@ -72,6 +72,7 @@ binary-arch: serverabi install
 	install -D -m 0644 debian/overrides \
 		debian/$(PACKAGE)/usr/share/lintian/overrides/$(PACKAGE)
 	dh_strip
+	dh_link
 	dh_compress
 	dh_fixperms
 	dh_makeshlibs
