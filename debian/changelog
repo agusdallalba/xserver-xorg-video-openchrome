@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome (1:0.2.902+svn575-1) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.902+svn577-1) UNRELEASED; urgency=low
 
   [ Timo Aaltonen ]
   * debian/patches/01_gen_pci_ids.diff:
@@ -13,13 +13,14 @@ xserver-xorg-video-openchrome (1:0.2.902+svn575-1) UNRELEASED; urgency=low
   * New upstream snapshot.
     + Fixes some Xv issues.
     + Disables XvDMA for P4M890 and K8M890, as it is broken.
+    + Enables CLE video engine on VM800/CN700.
   * Bump Standards-Version to 3.8.0
     + Use find instead of findstring for DEB_BUILD_OPTIONS parsing in d/rules
   * Stripped enclosing chevrons from the unichrome link (Closes: #485957)
     - p.d.o displays the link with or without them, and looks ugly
   * Removed a useless lintian override
 
- -- Raphael Geissert <atomo64@gmail.com>  Sun, 15 Jun 2008 16:38:30 -0500
+ -- Raphael Geissert <atomo64@gmail.com>  Thu, 19 Jun 2008 22:10:17 -0500
 
 xserver-xorg-video-openchrome (1:0.2.902+svn570-1) unstable; urgency=low
 
