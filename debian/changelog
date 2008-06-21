@@ -3,7 +3,7 @@ xserver-xorg-video-openchrome (1:0.2.902+svn577-1) UNRELEASED; urgency=low
   [ Timo Aaltonen ]
   * debian/patches/01_gen_pci_ids.diff:
     - This patch adds a list of pci id's that the driver supports so that
-      the server can automatically load it. Stolen from via.
+      the server can automatically load it. Stolen from via. (Closes: #487327)
   * debian/control:
     - Add quilt to build-deps.
   * debian/rules:
