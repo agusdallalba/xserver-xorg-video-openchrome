@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome (1:0.2.902+svn577-1) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.902+svn578-1) UNRELEASED; urgency=low
 
   [ Timo Aaltonen ]
   * debian/patches/01_gen_pci_ids.diff:
