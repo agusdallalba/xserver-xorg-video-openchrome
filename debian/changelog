@@ -15,7 +15,7 @@ xserver-xorg-video-openchrome (1:0.2.902+svn578-1) UNRELEASED; urgency=low
     + Disables XvDMA for P4M890 and K8M890, as it is broken.
     + Enables CLE video engine on VM800/CN700.
   * Bump Standards-Version to 3.8.0
-    + Use find instead of findstring for DEB_BUILD_OPTIONS parsing in d/rules
+    + Use filter instead of findstring for DEB_BUILD_OPTIONS parsing in d/rules
   * Stripped enclosing chevrons from the unichrome link (Closes: #485957)
     - p.d.o displays the link with or without them, and looks ugly
   * Removed a useless lintian override

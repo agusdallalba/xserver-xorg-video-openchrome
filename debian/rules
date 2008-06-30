@@ -20,7 +20,7 @@ ifneq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
 DEB_CONFIGURE_EXTRA_FLAGS += --host=$(DEB_HOST_GNU_TYPE)
 endif
 
-ifneq (,$(find debug,$(DEB_BUILD_OPTIONS)))
+ifneq (,$(filter debug,$(DEB_BUILD_OPTIONS)))
 DEB_CONFIGURE_EXTRA_FLAGS += \
 	--enable-debug=yes \
 	--enable-xv-debug=yes
