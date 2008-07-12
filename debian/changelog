@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome (1:0.2.902+svn579-1) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.902+svn579-1) unstable; urgency=low
 
   [ Timo Aaltonen ]
   * debian/patches/01_gen_pci_ids.diff:
@@ -21,7 +21,7 @@ xserver-xorg-video-openchrome (1:0.2.902+svn579-1) UNRELEASED; urgency=low
   * Removed a useless lintian override
   * Install a symlink to xserver-xorg-core's bugreport script
 
- -- Raphael Geissert <atomo64@gmail.com>  Thu, 19 Jun 2008 23:39:43 -0500
+ -- Julien Cristau <jcristau@debian.org>  Sat, 12 Jul 2008 21:29:00 +0200
 
 xserver-xorg-video-openchrome (1:0.2.902+svn570-1) unstable; urgency=low
 
