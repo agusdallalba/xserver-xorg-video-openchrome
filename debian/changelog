@@ -1,3 +1,14 @@
+xserver-xorg-video-openchrome (1:0.2.902+svn579-1+lenny1) unstable; urgency=low
+
+  * Cherry-picked the following changesets adding support for new cards:
+    + 580: MSI VR321
+    + 583: Foxconn P4M9007MB-8RS2H
+    + 586: MSI K9MM-V
+    + 589: Gigabyte M704 / RoverPC A700GQ
+    + 581: ECS CLE266
+
+ -- Raphael Geissert <atomo64@gmail.com>  Wed, 20 Aug 2008 21:47:28 -0500
+
 xserver-xorg-video-openchrome (1:0.2.902+svn579-1) unstable; urgency=low
 
   [ Timo Aaltonen ]
