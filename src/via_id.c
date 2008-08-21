@@ -39,6 +39,7 @@
  */
 static struct ViaCardIdStruct ViaCardId[] = {
     /*** CLE266 ***/
+    {"ECS CLE266 (1.0)",                      VIA_CLE266,  0x1019, 0x1B43, VIA_DEVICE_CRT | VIA_DEVICE_TV},
     {"LT21 VA28",                             VIA_CLE266,  0x1019, 0x1B44, VIA_DEVICE_CRT},
     {"ECS G320",                              VIA_CLE266,  0x1019, 0xB320, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Asustek Terminator C3V",                VIA_CLE266,  0x1043, 0x8155, VIA_DEVICE_CRT},
@@ -94,6 +95,7 @@ static struct ViaCardIdStruct ViaCardId[] = {
     {"MSI K8M Neo-V",                         VIA_K8M800,  0x1462, 0x0320, VIA_DEVICE_CRT},
     {"MSI K8MM-V",                            VIA_K8M800,  0x1462, 0x7142, VIA_DEVICE_CRT},
     {"MSI K8MM3-V",                           VIA_K8M800,  0x1462, 0x7181, VIA_DEVICE_CRT},
+    {"MSI K9MM-V",                            VIA_K8M800,  0x1462, 0x7312, VIA_DEVICE_CRT},
     {"MSI K8MM-ILSR",                         VIA_K8M800,  0x1462, 0x7410, VIA_DEVICE_CRT},
     {"Abit KV-80",                            VIA_K8M800,  0x147B, 0x1419, VIA_DEVICE_CRT},
     {"Abit KV-81",                            VIA_K8M800,  0x147B, 0x141A, VIA_DEVICE_CRT},
@@ -169,11 +171,13 @@ static struct ViaCardIdStruct ViaCardId[] = {
     {"Hewlett Packard 2133 Mini-Note",        VIA_P4M900,  0x103C, 0x3030, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Asustek P5VD2-VM",                      VIA_P4M900,  0x1043, 0x81CE, VIA_DEVICE_CRT},
     {"Asustek P5VD2-VM SE",                   VIA_P4M900,  0x1043, 0x8252, VIA_DEVICE_CRT},
+    {"Foxconn P4M9007MB-8RS2H",               VIA_P4M900,  0x105B, 0x0C87, VIA_DEVICE_CRT},
     {"Mitac 8515",                            VIA_P4M900,  0x1071, 0x8515, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Medion Notebook MD96483",               VIA_P4M900,  0x1071, 0x8615, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Mitac 8624",                            VIA_P4M900,  0x1071, 0x8624, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"VIA VT3364 (P4M900)",                   VIA_P4M900,  0x1106, 0x3371, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Gigabyte GA-VM900M",                    VIA_P4M900,  0x1458, 0xD000, VIA_DEVICE_CRT},
+    {"MSI VR321",                             VIA_P4M900,  0x1462, 0x3355, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"MSI P4M900M / P4M900M2-F/L",            VIA_P4M900,  0x1462, 0x7255, VIA_DEVICE_CRT},
     {"Everex NC1501/NC1503",                  VIA_P4M900,  0x1509, 0x1E30, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Clevo M660SE",                          VIA_P4M900,  0x1558, 0x0664, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
@@ -192,6 +196,7 @@ static struct ViaCardIdStruct ViaCardId[] = {
     {"Samsung Q1B",                           VIA_CX700,   0x144D, 0xC02C, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"FIC CE260",                             VIA_CX700,   0x1509, 0x2D30, VIA_DEVICE_LCD},
     {"FIC CE261",                             VIA_CX700,   0x1509, 0x2F07, VIA_DEVICE_LCD},
+    {"Gigabyte M704 / RoverPC A700GQ",        VIA_CX700,   0x161F, 0x2060, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Packard Bell EasyNote XS",              VIA_CX700,   0x1631, 0xC201, VIA_DEVICE_LCD}, /* aka Everex Cloudbook CE1200V */
 
     /*** P4M890, VN890 ***/
