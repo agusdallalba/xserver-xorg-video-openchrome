@@ -1,5 +1,6 @@
-xserver-xorg-video-openchrome (1:0.2.902+svn579-1+lenny1) unstable; urgency=low
+xserver-xorg-video-openchrome (1:0.2.902+svn579-2) unstable; urgency=low
 
+  [ Raphael Geissert ]
   * Cherry-picked the following changesets adding support for new cards:
     + 580: MSI VR321
     + 583: Foxconn P4M9007MB-8RS2H
@@ -7,7 +8,7 @@ xserver-xorg-video-openchrome (1:0.2.902+svn579-1+lenny1) unstable; urgency=low
     + 589: Gigabyte M704 / RoverPC A700GQ
     + 581: ECS CLE266
 
- -- Raphael Geissert <atomo64@gmail.com>  Wed, 20 Aug 2008 21:47:28 -0500
+ -- Julien Cristau <jcristau@debian.org>  Sun, 14 Sep 2008 17:52:58 +0200
 
 xserver-xorg-video-openchrome (1:0.2.902+svn579-1) unstable; urgency=low
 
