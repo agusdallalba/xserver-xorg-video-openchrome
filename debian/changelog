@@ -1,3 +1,13 @@
+xserver-xorg-video-openchrome (1:0.2.902+svn579-4) UNRELEASED; urgency=low
+
+  * Cherry-picked the following changesets:
+    + 591: IBM AnyPlace Kiosk 3xx
+    + 592: Add missing 640x480 PAL mode for VT1625
+    + 597: VT8454B has a panel
+    + 598: MSI K8M Neo-V (broken pci id)
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 09 Nov 2008 18:31:36 -0600
+
 xserver-xorg-video-openchrome (1:0.2.902+svn579-2) unstable; urgency=low
 
   [ Raphael Geissert ]
