@@ -65,6 +65,7 @@
 #include "via_swov.h"
 #include "via_dmabuffer.h"
 #include "via_3d.h"
+#include "via_video.h"
 
 #ifdef XSERVER_LIBPCIACCESS
 #include <pciaccess.h>
@@ -78,7 +79,6 @@
 #include "via_dri.h"
 #endif
 
-#ifdef VIA_HAVE_EXA
 #include "exa.h"
 #define VIA_AGP_UPL_SIZE    (1024*128)
 #define VIA_DMA_DL_SIZE     (1024*128)
@@ -92,7 +92,6 @@
 #define VIA_MIN_UPLOAD 4000
 #define VIA_MIN_TEX_UPLOAD 200
 #define VIA_MIN_DOWNLOAD 200
-#endif
 
 #define AGP_PAGE_SIZE 4096
 #define AGP_PAGES 8192
@@ -101,14 +100,9 @@
 #define DRIVER_NAME     "openchrome"
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   2
-#ifdef USE_NEW_XVABI
-#define PATCHLEVEL      902
-#else
-#define PATCHLEVEL      0
-#endif
+#define PATCHLEVEL      903
 #define VIA_VERSION     ((VERSION_MAJOR<<24) | (VERSION_MINOR<<16) | PATCHLEVEL)
 
-#define VIA_CURSOR_SIZE         (4 * 1024)
 #define VIA_VQ_SIZE             (256 * 1024)
 
 typedef struct {
@@ -211,7 +205,6 @@ typedef struct _VIA {
     int                 FBFreeEnd;
     int                 driSize;
     int                 maxDriSize;
-    int                 CursorStart;
     int                 VQStart;
     int                 VQEnd;
 
@@ -230,7 +223,7 @@ typedef struct _VIA {
 
     /* Here are all the Options */
     Bool                VQEnable;
-    Bool                hwcursor;
+    Bool		hwcursor;
     Bool                NoAccel;
     Bool                shadowFB;
     int                 rotate;
@@ -276,7 +269,7 @@ typedef struct _VIA {
     CARD32              lastMarkerRead;
     Bool                agpDMA;
     Bool                nPOT[VIA_NUM_TEXUNITS];
-#ifdef VIA_HAVE_EXA
+    const unsigned     *TwodRegs;
     ExaDriverPtr        exaDriverPtr;
     ExaOffscreenArea   *exa_scratch;
     unsigned int        exa_scratch_next;
@@ -297,7 +290,6 @@ typedef struct _VIA {
     unsigned            texOffset;
     char *              texAddr;
     char *              dBounce;
-#endif
 #endif
 
     /* BIOS Info Ptr */
@@ -354,11 +346,32 @@ typedef struct _VIA {
     Bool                dmaXV;
 
     CARD8               ActiveDevice;	/* Option */
-    unsigned char       *CursorImage;
-    CARD32		CursorFG;
-    CARD32		CursorBG;
-    CARD32		CursorMC;
 
+    unsigned char       *CursorImage;
+    CARD32              CursorFG;
+    CARD32              CursorBG;
+    Bool                CursorARGB;
+    Bool                CursorARGBSupported;
+    CARD8               CursorPipe;
+    int                 CursorStart;
+	int					CursorMaxWidth;
+	int					CursorMaxHeight;
+	int					CursorSize;
+
+    CARD32              CursorRegControl;
+    CARD32              CursorRegBase;
+    CARD32              CursorRegPos;
+    CARD32              CursorRegOffset;
+    CARD32              CursorRegFifo;
+    CARD32              CursorRegTransKey;
+
+    CARD32              CursorControl0;
+    CARD32              CursorControl1;
+    CARD32              CursorFifo;
+    CARD32              CursorTransparentKey;
+    CARD32              CursorPrimHiInvtColor;
+    CARD32              CursorV327HiInvtColor; 
+    
     /* Video */
     int                 VideoEngine;
     swovRec		swov;
@@ -375,12 +388,21 @@ typedef struct _VIA {
     
     ViaSharedPtr	sharedData;
     Bool                useDmaBlit;
+
+    void                *displayMap;
+    CARD32              displayOffset;
+    void                *cursorMap;
+    CARD32              cursorOffset;
+
 #ifdef HAVE_DEBUG
     Bool                disableXvBWCheck;
     Bool                DumpVGAROM;
     Bool                PrintVGARegs;
     Bool                PrintTVRegs;
     Bool                I2CScan;
+    
+    Bool                UseLegacyModeSwitch ;
+    video_via_regs*     VideoRegs ;
 #endif /* HAVE_DEBUG */
 } VIARec, *VIAPtr;
 
@@ -402,16 +424,17 @@ typedef struct
 } VIAEntRec, *VIAEntPtr;
 
 /* Prototypes. */
-#if defined(XF86DRI) || defined(VIA_HAVE_EXA)
 void VIAInitialize3DEngine(ScrnInfoPtr pScrn);
-#endif 
 
 /* In via_cursor.c. */
-Bool VIAHWCursorInit(ScreenPtr pScreen);
-void VIAShowCursor(ScrnInfoPtr);
-void VIAHideCursor(ScrnInfoPtr);
-void ViaCursorStore(ScrnInfoPtr pScrn);
-void ViaCursorRestore(ScrnInfoPtr pScrn);
+Bool viaCursorHWInit(ScreenPtr pScreen);
+void viaCursorShow(ScrnInfoPtr);
+void viaCursorHide(ScrnInfoPtr);
+void viaCursorStore(ScrnInfoPtr pScrn);
+void viaCursorRestore(ScrnInfoPtr pScrn);
+Bool viaCursorRecInit(ScrnInfoPtr pScrn);
+void viaCursorRecDestroy(ScrnInfoPtr pScrn);
+void viaCursorSetFB(ScrnInfoPtr pScrn);
 
 /* In via_accel.c. */
 Bool viaInitAccel(ScreenPtr);
