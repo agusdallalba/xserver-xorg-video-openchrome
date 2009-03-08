@@ -3,7 +3,7 @@ Index: xserver-xorg-video-openchrome/src/Makefile.am
 ===================================================================
 --- xserver-xorg-video-openchrome.orig/src/Makefile.am
 +++ xserver-xorg-video-openchrome/src/Makefile.am
-@@ -86,6 +86,12 @@ EXTRA_DIST += \
+@@ -92,6 +92,12 @@ EXTRA_DIST += \
  endif
  
  

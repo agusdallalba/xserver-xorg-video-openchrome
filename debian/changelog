@@ -1,12 +1,62 @@
-xserver-xorg-video-openchrome (1:0.2.902+svn579-4) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.903+svn735-1) unstable; urgency=low
 
-  * Cherry-picked the following changesets:
-    + 591: IBM AnyPlace Kiosk 3xx
-    + 592: Add missing 640x480 PAL mode for VT1625
-    + 597: VT8454B has a panel
-    + 598: MSI K8M Neo-V (broken pci id)
+  * New upstream snapshot
+    + 709: hwcursor improvements and bug fixes (Closes: #496922)
+    + 716: fix 2d initialization for P4M900
+    + 726: Fall back to software rendering for unsupported EXA repeat modes
+    + 734: Initialize CRTC before a mode switch
+  * debian/copyright updated to add details about a new copyright holder
 
- -- Raphael Geissert <atomo64@gmail.com>  Sun, 09 Nov 2008 18:31:36 -0600
+ -- Raphael Geissert <atomo64@gmail.com>  Sat, 07 Mar 2009 19:15:36 -0600
+
+xserver-xorg-video-openchrome (1:0.2.903+svn713-1) experimental; urgency=low
+
+  * New upstream snapshot
+    + 682-685: Initial VX800 chipsets support
+      + 708: Initial XVideo support
+    + 682: via_cursor.c: register corrections
+    + 686: Mitac 8624, but with a P4M890
+    + 687: VIA Epia M700
+    + 688: Hide overlay when video is invisible
+    + 690: Axper XP-M8VM800
+    + 693: Added more needed panel modes
+    + 694: XvMC Unichrome Pro allocation fixes (LP: #304119)
+    + 696: Fixed Crash worked around by XaaNoImageWriteRect (LP: #274340)
+    + 713: Twinhead M6
+  * vt_fix.patch: removed, different solution by upstream in r695
+  * disable_ARGB_cursor_VM800.patch: removed, no longer needed
+
+ -- Raphael Geissert <atomo64@gmail.com>  Fri, 09 Jan 2009 19:11:40 -0600
+
+xserver-xorg-video-openchrome (1:0.2.903+svn599-1) experimental; urgency=low
+
+  [ Raphael Geissert ]
+  * New upstream release + snapshot.
+    + 584: Simplified memory bandwidth setting.
+    + 591: IBM AnyPlace Kiosk 3xx.
+    + 592: Added missing 640x480 PAL mode for VT1625.
+    + 593-4: Merged randr branch.
+      + 595: Disabled ARGB cursor for K8M890.
+    + 597: VIA VT8454B has a panel.
+    + 598: MSI K8M Neo-V (broken pci id).
+  * disable_ARGB_cursor_VM800.patch: like r595 but for VM800.
+  * vt_fix.patch (Closes: #500253):
+    + prevent LCD's backlight from being switched off when changing VTs.
+  * debian/control:
+    + Build a dummy xserver-xorg-video-via package to ease the transition.
+    + Added lpia to the architectures list.
+
+  [ Julien Cristau ]
+  * Add DM-Upload-Allowed control field to let Raphael upload this package
+    himself.
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 19 Oct 2008 16:12:32 +0200
+
+xserver-xorg-video-openchrome (1:0.2.902+svn579-3) experimental; urgency=low
+
+  * Build against xserver 1.5.
+
+ -- Julien Cristau <jcristau@debian.org>  Sun, 14 Sep 2008 18:34:49 +0200
 
 xserver-xorg-video-openchrome (1:0.2.902+svn579-2) unstable; urgency=low
 
