@@ -33,7 +33,7 @@ xserver-xorg-video-openchrome (1:0.2.903+svn713-1) experimental; urgency=low
 
  -- Raphael Geissert <atomo64@gmail.com>  Fri, 09 Jan 2009 19:11:40 -0600
 
-xserver-xorg-video-openchrome (1:0.2.903+svn599-1) experimental; urgency=low
+xserver-xorg-video-openchrome (1:0.2.902+svn579-4) unstable; urgency=low
 
   [ Raphael Geissert ]
   * New upstream release + snapshot.
@@ -61,7 +61,7 @@ xserver-xorg-video-openchrome (1:0.2.902+svn579-3) experimental; urgency=low
 
   * Build against xserver 1.5.
 
- -- Julien Cristau <jcristau@debian.org>  Sun, 14 Sep 2008 18:34:49 +0200
+ -- Raphael Geissert <atomo64@gmail.com>  Wed, 17 Dec 2008 14:55:38 +0100
 
 xserver-xorg-video-openchrome (1:0.2.902+svn579-2) unstable; urgency=low
 
