@@ -1,14 +1,18 @@
-xserver-xorg-video-openchrome (1:0.2.903+svn735-1) unstable; urgency=low
+xserver-xorg-video-openchrome (1:0.2.903+svn741-1) unstable; urgency=low
 
   * New upstream snapshot
     + 709: hwcursor improvements and bug fixes (Closes: #496922)
     + 716: fix 2d initialization for P4M900
     + 726: Fall back to software rendering for unsupported EXA repeat modes
     + 734: Initialize CRTC before a mode switch
+    + 737: Samsung NC20
+    + 739: Fix 2D engine init
+    + 740: CX700 integrated TMDS
+    + 741: Foxconn P4M800P7MB-RS2H
   * debian/copyright updated to add details about a new copyright holder
   * debian/control: bump standards version, no change needed
 
- -- Raphael Geissert <atomo64@gmail.com>  Sat, 07 Mar 2009 19:15:36 -0600
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 29 Mar 2009 13:39:13 -0600
 
 xserver-xorg-video-openchrome (1:0.2.903+svn713-1) experimental; urgency=low
 
