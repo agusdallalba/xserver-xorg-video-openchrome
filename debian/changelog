@@ -6,6 +6,7 @@ xserver-xorg-video-openchrome (1:0.2.903+svn735-1) unstable; urgency=low
     + 726: Fall back to software rendering for unsupported EXA repeat modes
     + 734: Initialize CRTC before a mode switch
   * debian/copyright updated to add details about a new copyright holder
+  * debian/control: bump standards version, no change needed
 
  -- Raphael Geissert <atomo64@gmail.com>  Sat, 07 Mar 2009 19:15:36 -0600
 
