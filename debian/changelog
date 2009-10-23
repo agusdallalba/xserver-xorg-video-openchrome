@@ -1,3 +1,24 @@
+xserver-xorg-video-openchrome (1:0.2.904+svn812-1) UNRELEASED; urgency=low
+
+  * New upstream release + snapshot
+    + 742: VX800 integrated TMDS support
+    + 748: MSI P4M900M3-L
+    + 753: fix a segfault on shutdown when there's no Xv
+    + 755: Sharp PC-AE30J
+    + 768: Add rotate upside-down
+    + 775: Add support of the VIA Openbook
+    + 778: Haier A60-440256080BD (actually an ECS mobo)
+    + 779: Lenovo S12
+    + 784: ECS P4M890T-M v2.0
+    + 794: Packard Bell Lima (ASUS MBP5VDZ-NVM)
+    + 801: Twinhead H12V (P4M900)
+    + 807: ModeSwitchMethod option
+    + 812: Guillemot-Hercules ECafe EC900B
+    + VX855 support
+    + Multiple panel autodetection issues
+
+ -- Raphael Geissert <geissert@debian.org>  Thu, 22 Oct 2009 12:06:10 -0500
+
 xserver-xorg-video-openchrome (1:0.2.903+svn741-1) unstable; urgency=low
 
   * New upstream snapshot
