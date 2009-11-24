@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome (1:0.2.904+svn812-1) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.904+svn812-1) unstable; urgency=low
 
   * New upstream release + snapshot
     + 742: VX800 integrated TMDS support
@@ -16,8 +16,10 @@ xserver-xorg-video-openchrome (1:0.2.904+svn812-1) UNRELEASED; urgency=low
     + 812: Guillemot-Hercules ECafe EC900B
     + VX855 support
     + Multiple panel autodetection issues
+  * Change my email address and drop DM-U-A field
+  * Bump standards-version, no change needed
 
- -- Raphael Geissert <geissert@debian.org>  Thu, 22 Oct 2009 12:06:10 -0500
+ -- Raphael Geissert <geissert@debian.org>  Mon, 23 Nov 2009 23:04:04 -0600
 
 xserver-xorg-video-openchrome (1:0.2.903+svn741-1) unstable; urgency=low
 
