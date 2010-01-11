@@ -561,7 +561,7 @@ viaInitVideo(ScreenPtr pScreen)
     XF86VideoAdaptorPtr *adaptors, *newAdaptors;
     int num_adaptors, num_new;
 
-    DBG_DD(ErrorF(" via_video.c : viaInitVideo : \n"));
+    DBG_DD(ErrorF(" via_video.c : viaInitVideo, Screen[%d]\n", pScrn->scrnIndex));
 
     allAdaptors = NULL;
     newAdaptors = NULL;
@@ -832,7 +832,7 @@ viaSetupAdaptors(ScreenPtr pScreen, XF86VideoAdaptorPtr ** adaptors)
     DevUnion *pdevUnion;
     int i, j, usedPorts, numPorts;
 
-    DBG_DD(ErrorF(" via_video.c : viaSetupImageVideo: \n"));
+    DBG_DD(ErrorF(" via_video.c : viaSetupAdaptors (viaSetupImageVideo): \n"));
 
     xvBrightness = MAKE_ATOM("XV_BRIGHTNESS");
     xvContrast = MAKE_ATOM("XV_CONTRAST");
@@ -1042,6 +1042,8 @@ viaGetPortAttribute(ScrnInfoPtr pScrn,
         }
 
     } else {
+        DBG_DD(ErrorF(" via_video.c : viaGetPortAttribute : is not supported the attribute\n"));
+        
         /*return BadMatch */;
     }
     return Success;
@@ -1498,6 +1500,7 @@ viaQueryImageAttributes(ScrnInfoPtr pScrn,
 
     DBG_DD(ErrorF(" via_video.c : viaQueryImageAttributes : FourCC=0x%x, ",
             id));
+    DBG_DD(ErrorF(" via_video.c : Screen[%d],  w=%d, h=%d\n", pScrn->scrnIndex, *w, *h));
 
     if ((!w) || (!h))
         return 0;
@@ -1513,6 +1516,7 @@ viaQueryImageAttributes(ScrnInfoPtr pScrn,
 
     switch (id) {
         case FOURCC_YV12: /*Planar format : YV12 -4:2:0 */
+        case FOURCC_I420:
             *h = (*h + 1) & ~1;
             size = *w;
             if (pVia->useDmaBlit)

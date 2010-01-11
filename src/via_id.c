@@ -189,6 +189,7 @@ static struct ViaCardIdStruct ViaCardId[] = {
     {"MSI P4M900M / P4M900M2-F/L",            VIA_P4M900,  0x1462, 0x7255, VIA_DEVICE_CRT},
     {"MSI P4M900M3-L",                        VIA_P4M900,  0x1462, 0x7387, VIA_DEVICE_CRT},
     {"Twinhead H12V",                         VIA_P4M900,  0x14FF, 0xA00F, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
+    {"Twinhead K15V",                         VIA_P4M900,  0x14FF, 0xA012, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Everex NC1501/NC1503",                  VIA_P4M900,  0x1509, 0x1E30, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Clevo M660SE",                          VIA_P4M900,  0x1558, 0x0664, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Clevo M660SR",                          VIA_P4M900,  0x1558, 0x0669, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
@@ -232,6 +233,7 @@ static struct ViaCardIdStruct ViaCardId[] = {
 
     /*** VX855 ***/
     {"VIA VT8562C",                           VIA_VX855,   0x1106, 0x5122, VIA_DEVICE_CRT},
+    {"OLPC XO 1.5",                           VIA_VX855,   0x152D, 0x0833, VIA_DEVICE_LCD},
 
     /* keep this */
     {NULL,                                    VIA_UNKNOWN, 0x0000, 0x0000, VIA_DEVICE_NONE}
