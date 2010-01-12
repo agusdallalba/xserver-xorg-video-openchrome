@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome (1:0.2.904+svn812-2) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.904+svn827-2) UNRELEASED; urgency=low
 
   [ Timo Aaltonen ]
   * Build against Xserver 1.7.
@@ -10,6 +10,20 @@ xserver-xorg-video-openchrome (1:0.2.904+svn812-2) UNRELEASED; urgency=low
     good reason.  Thanks, Colin Watson!
 
  -- Timo Aaltonen <tjaalton@ubuntu.com>  Sat, 05 Dec 2009 01:59:03 +0200
+
+xserver-xorg-video-openchrome (1:0.2.904+svn827-1) unstable; urgency=low
+
+  * New upstream snapshot
+    + 816: OLPC XO 1.5
+    + 817: Add panel scale support for CLE266 and KM400
+    + 818: Enabled new mode switch for PM800 chipset,
+    + 819: Add option to enable unaccelerated RandR rotation ("SWRandR")
+    + 820: Enable new mode switch for VM800 chipsets
+    + 827: Twinhead K15V
+  * Fix some typos in the man page
+  * Update xsfbs to latest version
+
+ -- Raphael Geissert <geissert@debian.org>  Tue, 12 Jan 2010 02:13:51 -0600
 
 xserver-xorg-video-openchrome (1:0.2.904+svn812-1) unstable; urgency=low
 
