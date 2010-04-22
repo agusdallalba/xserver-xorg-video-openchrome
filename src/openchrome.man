@@ -1,3 +1,4 @@
+.\" Shorthand for double quote that works everywhere,
 .\" also within other double quotes:
 .ds q \N'34'
 .TH OPENCHROME __drivermansuffix__ __vendorversion__
