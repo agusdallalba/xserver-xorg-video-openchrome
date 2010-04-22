@@ -309,6 +309,7 @@ VIASetup(pointer module, pointer opts, int *errmaj, int *errmin)
 {
     static Bool setupDone = FALSE;
 
+    /* Only be loaded once */
     if (!setupDone) {
         setupDone = TRUE;
         xf86AddDriver(&VIA, module,
@@ -341,6 +342,7 @@ VIAGetRec(ScrnInfoPtr pScrn)
     if (pScrn->driverPrivate)
         return TRUE;
 
+    /* allocate VIARec */
     pScrn->driverPrivate = xnfcalloc(sizeof(VIARec), 1);
     VIAPtr pVia = ((VIARec *) (pScrn->driverPrivate));
 
@@ -457,7 +459,6 @@ via_pci_probe(DriverPtr driver, int entity_num,
 {
     ScrnInfoPtr scrn = NULL;
     EntityInfoPtr entity;
-    DevUnion *private;
 
     scrn = xf86ConfigPciEntity(scrn, 0, entity_num, VIAPciChipsets,
                                NULL, NULL, NULL, NULL, NULL);
@@ -654,6 +655,12 @@ VIAProbeDDC(ScrnInfoPtr pScrn, int index)
     vbeInfoPtr pVbe;
 
     if (xf86LoadSubModule(pScrn, "vbe")) {
+        /* FIXME This line should be replaced to:
+
+           pVbe = VBEExtendedInit(NULL, index, 0);
+
+           for XF86 version > 4.2.99
+        */
         pVbe = VBEInit(NULL, index);
         ConfiguredMonitor = vbeDoEDID(pVbe, NULL);
         vbeFree(pVbe);
@@ -666,7 +673,7 @@ VIASetupDefaultOptions(ScrnInfoPtr pScrn)
     VIAPtr pVia = VIAPTR(pScrn);
     VIABIOSInfoPtr pBIOSInfo = pVia->pBIOSInfo;
 
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VIASetupDefaultOptions\n"));
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VIASetupDefaultOptions - Setting up default chipset options.\n"));
 
     pVia->shadowFB = FALSE;
     pVia->NoAccel = FALSE;
@@ -690,6 +697,9 @@ VIASetupDefaultOptions(ScrnInfoPtr pScrn)
 #ifdef HAVE_DEBUG
     pVia->PrintVGARegs = FALSE;
 #endif
+
+    /* Disable vertical interpolation because the size of */
+    /* line buffer (limited to 800) is too small to do interpolation. */
     pVia->swov.maxWInterp = 800;
     pVia->swov.maxHInterp = 600;
     pVia->useLegacyVBE = TRUE;
@@ -1055,18 +1065,12 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
         xf86DrvMsg(pScrn->scrnIndex, from,
                    "Probed amount of VideoRAM = %d kB\n", pScrn->videoRam);
 
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-               "Setting up default chipset options.\n");
     if (!VIASetupDefaultOptions(pScrn)) {
         VIAFreeRec(pScrn);
         return FALSE;
     }
 
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Reading config file...\n");
     xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, VIAOptions);
-
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-               "Starting to parse config file options...\n");
 
     if (xf86GetOptValInteger(VIAOptions, OPTION_VIDEORAM, &pScrn->videoRam))
         xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
@@ -1528,6 +1532,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
         }
     }
 
+    /* Initialize the colormap */
     Gamma zeros = { 0.0, 0.0, 0.0 };
     if (!xf86SetGamma(pScrn, zeros)) {
         VIAFreeRec(pScrn);
@@ -1974,7 +1979,9 @@ VIASave(ScrnInfoPtr pScrn)
         Regs->SR17 = hwp->readSeq(hwp, 0x17);
         Regs->SR18 = hwp->readSeq(hwp, 0x18);
         Regs->SR19 = hwp->readSeq(hwp, 0x19);
+        /* PCI Bus Control */
         Regs->SR1A = hwp->readSeq(hwp, 0x1A);
+
         Regs->SR1B = hwp->readSeq(hwp, 0x1B);
         Regs->SR1C = hwp->readSeq(hwp, 0x1C);
         Regs->SR1D = hwp->readSeq(hwp, 0x1D);
@@ -2016,40 +2023,56 @@ VIASave(ScrnInfoPtr pScrn)
                 Regs->SR4C = hwp->readSeq(hwp, 0x4C);
                 break;
         }
-        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-              "Non-Primary Adapter! saving VGA_SR_MODE only !!\n"));
         DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Crtc...\n"));
 
         Regs->CR13 = hwp->readCrtc(hwp, 0x13);
 
         Regs->CR32 = hwp->readCrtc(hwp, 0x32);
         Regs->CR33 = hwp->readCrtc(hwp, 0x33);
-        Regs->CR34 = hwp->readCrtc(hwp, 0x34);
+
         Regs->CR35 = hwp->readCrtc(hwp, 0x35);
         Regs->CR36 = hwp->readCrtc(hwp, 0x36);
 
+
+
+        /* Starting Address */
+        /* Start Address High */
+        Regs->CR0C = hwp->readCrtc(hwp, 0x0C);
+        /* Start Address Low */
+        Regs->CR0D = hwp->readCrtc(hwp, 0x0D);
+        /* Starting Address Overflow Bits[28:24] */
         Regs->CR48 = hwp->readCrtc(hwp, 0x48);
+        /* CR34 are fire bits. Must be writed after CR0C CR0D CR48.  */
+        /* Starting Address Overflow Bits[23:16] */
+        Regs->CR34 = hwp->readCrtc(hwp, 0x34);
+
+
         Regs->CR49 = hwp->readCrtc(hwp, 0x49);
 
         DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "TVSave...\n"));
         if (pBIOSInfo->TVI2CDev)
             ViaTVSave(pScrn);
 
-        /* Save LCD control registers. */
+        /* Save LCD control registers (from CR 0x50 to 0x93). */
         for (i = 0; i < 68; i++)
             Regs->CRTCRegs[i] = hwp->readCrtc(hwp, i + 0x50);
 
         if (pVia->Chipset != VIA_CLE266 && pVia->Chipset != VIA_KM400) {
-
-            Regs->CRA0 = hwp->readCrtc(hwp, 0xA0);
-            Regs->CRA1 = hwp->readCrtc(hwp, 0xA1);
-            Regs->CRA2 = hwp->readCrtc(hwp, 0xA2);
-
+            /* LVDS Channel 2 Function Select 0 / DVI Function Select */ 
             Regs->CR97 = hwp->readCrtc(hwp, 0x97);
+            /* LVDS Channel 1 Function Select 0 */
             Regs->CR99 = hwp->readCrtc(hwp, 0x99);
+            /* Digital Video Port 1 Function Select 0 */
             Regs->CR9B = hwp->readCrtc(hwp, 0x9B);
+            /* Power Now Control 4 */
             Regs->CR9F = hwp->readCrtc(hwp, 0x9F);
 
+            /* Horizontal Scaling Initial Value */
+            Regs->CRA0 = hwp->readCrtc(hwp, 0xA0);
+            /* Vertical Scaling Initial Value */
+            Regs->CRA1 = hwp->readCrtc(hwp, 0xA1);
+            /* Scaling Enable Bit */
+            Regs->CRA2 = hwp->readCrtc(hwp, 0xA2);
         }
 
         /* Save TMDS status */
@@ -2137,10 +2160,18 @@ VIARestore(ScrnInfoPtr pScrn)
     hwp->writeSeq(hwp, 0x45, Regs->SR45);
     hwp->writeSeq(hwp, 0x46, Regs->SR46);
 
+    /* Reset VCK PLL */
+    hwp->writeSeq(hwp, 0x40, hwp->readSeq(hwp, 0x40) | 0x02); /* Set SR40[1] to 1 */
+    hwp->writeSeq(hwp, 0x40, hwp->readSeq(hwp, 0x40) & 0xFD); /* Set SR40[1] to 0 */
+
     /* ECK Clock Synthesizer: */
     hwp->writeSeq(hwp, 0x47, Regs->SR47);
     hwp->writeSeq(hwp, 0x48, Regs->SR48);
     hwp->writeSeq(hwp, 0x49, Regs->SR49);
+
+    /* Reset ECK PLL */
+    hwp->writeSeq(hwp, 0x40, hwp->readSeq(hwp, 0x40) | 0x01); /* Set SR40[0] to 1 */
+    hwp->writeSeq(hwp, 0x40, hwp->readSeq(hwp, 0x40) & 0xFE); /* Set SR40[0] to 0 */
 
     switch (pVia->Chipset) {
         case VIA_CLE266:
@@ -2151,6 +2182,10 @@ VIARestore(ScrnInfoPtr pScrn)
             hwp->writeSeq(hwp, 0x4A, Regs->SR4A);
             hwp->writeSeq(hwp, 0x4B, Regs->SR4B);
             hwp->writeSeq(hwp, 0x4C, Regs->SR4C);
+
+            /* Reset LCK PLL */
+            hwp->writeSeq(hwp, 0x40, hwp->readSeq(hwp, 0x40) | 0x04); /* Set SR40[2] to 1 */
+            hwp->writeSeq(hwp, 0x40, hwp->readSeq(hwp, 0x40) & 0xFB); /* Set SR40[2] to 0 */
             break;
     }
 
@@ -2166,14 +2201,23 @@ VIARestore(ScrnInfoPtr pScrn)
     hwp->writeCrtc(hwp, 0x32, Regs->CR32);
     /* HSYNCH Adjuster */
     hwp->writeCrtc(hwp, 0x33, Regs->CR33);
-    /* Starting Address Overflow */
-    hwp->writeCrtc(hwp, 0x34, Regs->CR34);
     /* Extended Overflow */
     hwp->writeCrtc(hwp, 0x35, Regs->CR35);
     /*Power Management 3 (Monitor Control) */
     hwp->writeCrtc(hwp, 0x36, Regs->CR36);
 
+    /* Starting Address */
+    /* Start Address High */
+    hwp->writeCrtc(hwp, 0x0C, Regs->CR0C);
+    /* Start Address Low */
+    hwp->writeCrtc(hwp, 0x0D, Regs->CR0D);
+    /* Starting Address Overflow Bits[28:24] */
     hwp->writeCrtc(hwp, 0x48, Regs->CR48);
+    /* CR34 are fire bits. Must be writed after CR0C CR0D CR48.  */
+    /* Starting Address Overflow Bits[23:16] */
+    hwp->writeCrtc(hwp, 0x34, Regs->CR34);
+    
+
     hwp->writeCrtc(hwp, 0x49, Regs->CR49);
 
     /* Restore LCD control registers. */
@@ -2492,7 +2536,6 @@ static void
 VIALoadRgbLut(ScrnInfoPtr pScrn, int numColors, int *indices, LOCO *colors,
               VisualPtr pVisual)
 {
-    VIAPtr pVia = VIAPTR(pScrn);
     vgaHWPtr hwp = VGAHWPTR(pScrn);
 
     int i, j, index;
@@ -2919,7 +2962,6 @@ static Bool
 VIAWriteMode(ScrnInfoPtr pScrn, DisplayModePtr mode)
 {
     VIAPtr pVia = VIAPTR(pScrn);
-    VIABIOSInfoPtr pBIOSInfo = pVia->pBIOSInfo;
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VIAWriteMode\n"));
 
@@ -3072,9 +3114,7 @@ static void
 VIAAdjustFrame(int scrnIndex, int x, int y, int flags)
 {
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-    vgaHWPtr hwp = VGAHWPTR(pScrn);
     VIAPtr pVia = VIAPTR(pScrn);
-    CARD32 Base;
 
     DEBUG(xf86DrvMsg(scrnIndex, X_INFO, "VIAAdjustFrame %dx%d\n", x, y));
 
@@ -3212,7 +3252,6 @@ VIASwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 static void
 VIADPMS(ScrnInfoPtr pScrn, int mode, int flags)
 {
-    vgaHWPtr hwp = VGAHWPTR(pScrn);
     VIAPtr pVia = VIAPTR(pScrn);
     VIABIOSInfoPtr pBIOSInfo = pVia->pBIOSInfo;
 

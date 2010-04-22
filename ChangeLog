@@ -1,3 +1,36 @@
+2010-04-21  Bartosz Kosiorek  <gang65@poczta.onet.pl>
+
+	Replace RegionsEqual with REGION_EQUAL and use 
+        the xf86XVFillKeyHelperDrawable instead of xf86XVFillKeyHelper
+
+	* src/via_video.c: (viaReputImage), (viaPutImage):
+
+2010-03-07  Bartosz Kosiorek  <gang65@poczta.onet.pl>
+
+	Fix segfaults with EXA and XV (Ticket #359)
+        Tested on K8M890 and VN800
+
+	* src/via_video.c: (viaReputImage), (viaPutImage):
+
+2010-02-10  Bartosz Kosiorek  <gang65@poczta.onet.pl>
+
+	Fix bug with suspend and VT switch on VX800 and 64bit systems
+
+	* src/via_driver.h:
+	* src/via_video.c: (viaResetVideo), (viaSaveVideo),
+	(viaRestoreVideo), (viaExitVideo):
+	* src/via_video.h:
+
+2010-01-24  Bartosz Kosiorek  <gang65@poczta.onet.pl>
+
+	Fix starting address restore and save (initial 64-bit support)
+
+	* src/via_crtc.c: (ViaFirstCRTCSetMode),
+	(ViaFirstCRTCSetStartingAddress):
+	* src/via_dri.c: (VIADRIAgpInit):
+	* src/via_driver.c: (VIASave), (VIARestore):
+	* src/via_driver.h:
+
 2009-12-04  Bartosz Kosiorek  <gang65@poczta.onet.pl>
 
 	Enable new mode switch for VM800 chipsets
