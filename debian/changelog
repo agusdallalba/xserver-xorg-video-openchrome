@@ -1,4 +1,10 @@
-xserver-xorg-video-openchrome (1:0.2.904+svn827-2) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.904+svn842-1) UNRELEASED; urgency=low
+
+ * New upstream snapshot
+   + 829: FIC PTM800Pro LF
+   + 837: MSI K8M890M2-V
+   + 838: Fix bug with suspend and VT switch on VX800 chipset on 64bit sys
+   + 840: Fix segfaults with EXA and XV
 
   [ Timo Aaltonen ]
   * Build against Xserver 1.7.
@@ -8,6 +14,11 @@ xserver-xorg-video-openchrome (1:0.2.904+svn827-2) UNRELEASED; urgency=low
   [ Julien Cristau ]
   * Rename the build directory to not include DEB_BUILD_GNU_TYPE for no
     good reason.  Thanks, Colin Watson!
+
+  [ Raphael Geissert ]
+  * Manpage typos patch merged upstream
+  * Update standards version, no changes required
+  * Fix watch file not to accept 'latest' as upstream version
 
  -- Timo Aaltonen <tjaalton@ubuntu.com>  Sat, 05 Dec 2009 01:59:03 +0200
 
