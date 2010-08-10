@@ -1,10 +1,10 @@
 xserver-xorg-video-openchrome (1:0.2.904+svn842-1) UNRELEASED; urgency=low
 
- * New upstream snapshot
-   + 829: FIC PTM800Pro LF
-   + 837: MSI K8M890M2-V
-   + 838: Fix bug with suspend and VT switch on VX800 chipset on 64bit sys
-   + 840: Fix segfaults with EXA and XV
+  * New upstream snapshot
+    + 829: FIC PTM800Pro LF
+    + 837: MSI K8M890M2-V
+    + 838: Fix bug with suspend and VT switch on VX800 chipset on 64bit sys
+    + 840: Fix segfaults with EXA and XV
 
   [ Timo Aaltonen ]
   * Build against Xserver 1.7.
