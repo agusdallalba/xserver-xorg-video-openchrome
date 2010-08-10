@@ -20,7 +20,11 @@ xserver-xorg-video-openchrome (1:0.2.904+svn842-1) UNRELEASED; urgency=low
   * Update standards version, no changes required
   * Fix watch file not to accept 'latest' as upstream version
 
- -- Timo Aaltonen <tjaalton@ubuntu.com>  Sat, 05 Dec 2009 01:59:03 +0200
+  [ Christopher James Halse Rogers ]
+  * Update xsfbs to fix build against xserver-xorg >= 1.7.6.901-1 and use new 
+    substvars in debian/control.
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Tue, 10 Aug 2010 10:27:53 +1000
 
 xserver-xorg-video-openchrome (1:0.2.904+svn827-1) unstable; urgency=low
 
