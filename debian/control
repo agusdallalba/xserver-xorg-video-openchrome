@@ -10,7 +10,7 @@ Build-Depends:
  automake,
  libtool,
  pkg-config,
- xserver-xorg-dev (>= 2:1.7),
+ xserver-xorg-dev (>= 2:1.7.6.901),
  x11proto-core-dev,
  x11proto-fonts-dev,
  x11proto-randr-dev,
@@ -32,7 +32,7 @@ Vcs-Browser: http://git.debian.org/?p=pkg-xorg/driver/xserver-xorg-video-openchr
 
 Package: xserver-xorg-video-openchrome
 Architecture: i386 amd64 hurd-i386 kfreebsd-i386 kfreebsd-amd64 lpia
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${xserver:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${xviddriver:Depends}
 Provides: ${xviddriver:Provides}
 Conflicts: libchromexvmc1, libchromexvmcpro1
 Replaces: libchromexvmc1, libchromexvmcpro1
