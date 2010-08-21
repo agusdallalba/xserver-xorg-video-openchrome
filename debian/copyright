@@ -58,7 +58,8 @@ Packaging License:
 On Debian systems, a complete copy of the GPL can be found under
 /usr/share/common-licenses/GPL-3
 
-The Debian packaging is Copyright 2007-2008 by Raphael Geissert <atomo64@gmail.com>
+The Debian packaging is Copyright 2010- by Julien Viard de Galbert <julien@vdg.blogsite.org>
+based on Copyright 2007-2008 by Raphael Geissert <atomo64@gmail.com>
 based on the work © 2007 by Mario Limonciello <superm1@ubuntu.com> which was
 based upon the work by Eric Work <work.eric@gmail.com> and is licensed 
 under the GPL.
