@@ -999,6 +999,7 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
         unsigned long DisplayBufferIndex)
 {
     unsigned long proReg = 0;
+    unsigned count = 50000;
 
     if (pVia->ChipId == PCI_CHIP_VT3259
         && !(pVia->swov.gdwVideoFlagSW & VIDEO_1_INUSE))
@@ -1010,7 +1011,8 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
         case FOURCC_RV15:
         case FOURCC_RV16:
         case FOURCC_RV32:
-            while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP));
+            while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP)
+                    && --count);
             VIDOutD(HQV_SRC_STARTADDR_Y + proReg,
                 pVia->swov.SWDevice.dwSWPhysicalAddr[DisplayBufferIndex]);
             VIDOutD(HQV_CONTROL + proReg,
@@ -1019,7 +1021,8 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
             break;
         case FOURCC_YV12:
         default:
-            while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP));
+            while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP)
+                    && --count);
             VIDOutD(HQV_SRC_STARTADDR_Y + proReg,
                 pVia->swov.SWDevice.dwSWPhysicalAddr[DisplayBufferIndex]);
             if (pVia->VideoEngine == VIDEO_ENGINE_CME) {
@@ -1365,6 +1368,7 @@ viaPutImage(ScrnInfoPtr pScrn,
                     && (pVia->old_dwUseExtendedFIFO == dwUseExtendedFIFO)
                     && (pVia->VideoStatus & VIDEO_SWOV_ON) &&
                     REGION_EQUAL(pScrn->pScreen, &pPriv->clip, clipBoxes)) {
+                DBG_DD(ErrorF(" via_video.c : don't do UpdateOverlay! \n"));
                 viaXvError(pScrn, pPriv, xve_none);
                 return Success;
             }
@@ -1444,7 +1448,6 @@ viaQueryImageAttributes(ScrnInfoPtr pScrn,
 
     switch (id) {
         case FOURCC_YV12: /*Planar format : YV12 -4:2:0 */
-        case FOURCC_I420:
             *h = (*h + 1) & ~1;
             size = *w;
             if (pVia->useDmaBlit)

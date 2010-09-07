@@ -1,3 +1,83 @@
+2010-06-24  Jon Nettleton  <jon.nettleton@gmail.com>
+
+	PM800 also uses the CME Engine.  Setup the hqv_cme_regs
+	for it.
+
+	* src/via_swov.c: (VIAVidHWDiffInit):
+
+2010-06-09  Bartosz Kosiorek  <gang65@poczta.onet.pl>
+
+	Fix freeze on 64bit system for K8M800 chipset
+
+	* src/via_dri.c: (VIADRIAgpInit):
+
+2010-05-04  Jon Nettleton <jon.nettleton@gmail.com>
+
+	Re-enable the Virtual Queue for the VX800/VX855 chipsets.
+
+	* src/via_accel.c: (viaDisableVQ), (viaInitialize2DEngine):
+
+2010-05-04  Jon Nettleton  <jon.nettleton@gmail.com>
+
+	Disable certain hardware clipping options for the VX855.
+	These cause the 2d engine to become unstable when in
+	16-bit mode.
+
+	* src/via_accel.c: (viaInitXAA):
+
+2010-05-04  Jon Nettleton <jon.nettleton@gmail.com>
+
+	Add an undocumented option which allows certain I2C buses
+	to be probed at startup.  This allows workarounds for custom
+	chipset makers that have used the VX855 I2C buses for other
+	purposes.
+
+	* src/via_bios.h:
+	* src/via_driver.c: (VIASetupDefaultOptions), (VIAPreInit):
+	* src/via_driver.h:
+	* src/via_i2c.c:
+
+2010-05-04  Jon Nettleton  <jon.nettleton@gmail.com>
+
+	Improve 2d performance on chipsets that don't have
+	AGP/PCIe support yet.
+
+	* src/via_accel.c: (viaSetupForScreenToScreenCopy),
+	(viaSetupForSolidFill), (viaSetupForMono8x8PatternFill),
+	(viaSetupForColor8x8PatternFill),
+	(viaSetupForCPUToScreenColorExpandFill),
+	(viaSubsequentScanlineCPUToScreenColorExpandFill),
+	(viaSetupForImageWrite), (viaSubsequentImageWriteRect),
+	(viaSetupForSolidLine), (viaSetupForDashedLine), (viaInitXAA):
+
+2010-05-04  Jon Nettleton <jon.nettleton@gmail.com>
+
+	Put timeouts on our while statements.  These codepaths
+	should be interrupted by a hardware state change, but
+	if something goes wrong they loop forevere.  Let's try
+	and behave a little by putting a timeout on these loops.
+
+	* src/via_swov.c: (viaWaitHQVFlip), (viaWaitHQVFlipClear),
+	(viaWaitHQVDone):
+	* src/via_video.c: (Flip):
+
+2010-05-04  Jon Nettleton <jon.nettleton@gmail.com>
+
+	Add XVideo support for the VX855 Chipset.
+	To support this chipset I have added HWDiff->HQVCmeRegs
+	that allows handling differing register values, and
+	HWDiff->dwNewScaleCtl which allows selection of a
+	new Video scaling engine needed for the VX800/VX855
+	chipsets.
+
+	* src/via.h:
+	* src/via_bandwidth.c: (ViaSetSecondaryFIFO):
+	* src/via_driver.h:
+	* src/via_swov.c: (SaveVideoRegister), (VIAVidHWDiffInit),
+	(viaOverlayHQVCalcZoomWidth), (viaOverlayHQVCalcZoomHeight),
+	(ViaSwovSurfaceCreate), (SetHQVFetch), (Upd_Video):
+	* src/via_swov.h:
+
 2010-04-21  Bartosz Kosiorek  <gang65@poczta.onet.pl>
 
 	Replace RegionsEqual with REGION_EQUAL and use 

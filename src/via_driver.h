@@ -286,6 +286,7 @@ typedef struct _VIA {
     Bool                agpDMA;
     Bool                nPOT[VIA_NUM_TEXUNITS];
     const unsigned     *TwodRegs;
+    const unsigned     *HqvCmeRegs;
     ExaDriverPtr        exaDriverPtr;
     ExaOffscreenArea   *exa_scratch;
     unsigned int        exa_scratch_next;
@@ -412,6 +413,8 @@ typedef struct _VIA {
     CARD32              displayOffset;
     void                *cursorMap;
     CARD32              cursorOffset;
+
+    CARD8               I2CDevices;	/* Option */
 
 #ifdef HAVE_DEBUG
     Bool                disableXvBWCheck;
