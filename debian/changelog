@@ -1,3 +1,23 @@
+xserver-xorg-video-openchrome (1:0.2.904+svn858-1) UNRELEASED; urgency=low
+
+  * New upstream snapshot
+    + 843: Fix DFP parameter description for the ActiveDevice option
+    + 845: set colorkey for 2nd_monitor
+    + 846: XVideo support for VX855
+      + 853: Revert 2 changes that should not have gone into rev 846
+    + 848: Improve 2d performance on chipsets without AGP/PCIe
+    + 849: Add option I2CDevices
+    + 850: Disable Hardware Clipping for the VX855
+    + 851: Re-Enable the VQ for VX800/VX855
+    + 852: Disable AGP and DMA by default for VX800 and VX855
+    + 854: Fixed freeze on 64bit system for K8M090 chipset
+    + 855: Increase bandwidth to handle 1920x1200 resolution with DDR266
+    + 856: Fix XV crash on PM800 post VX855 rework
+    + 857: ECS P4M800PRO-M2 (V2.0) - reported by Jandré le Roux
+      + 858: fix typo in r857
+
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 07 Sep 2010 10:03:54 +0200
+
 xserver-xorg-video-openchrome (1:0.2.904+svn842-1) unstable; urgency=low
 
   * New upstream snapshot
