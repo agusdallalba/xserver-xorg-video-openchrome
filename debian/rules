@@ -71,7 +71,7 @@ binary-arch: serverabi install
 	dh_installdocs NEWS
 	install -D -m 0644 debian/overrides \
 		debian/$(PACKAGE)/usr/share/lintian/overrides/$(PACKAGE)
-	dh_strip
+	dh_strip --dbg-package=xserver-xorg-video-openchrome-dbg
 	dh_link
 	dh_compress
 	dh_fixperms

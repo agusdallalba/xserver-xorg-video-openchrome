@@ -50,6 +50,26 @@ Description: X.Org X server -- VIA display driver
  you wish to make use of the acceleration features of your VIA chip with free
  and open-source drivers is to use this version of the driver.
 
+Package: xserver-xorg-video-openchrome-dbg
+Architecture: i386 amd64 hurd-i386 kfreebsd-i386 kfreebsd-amd64 lpia
+Section: debug
+Depends: xserver-xorg-video-openchrome (= ${binary:Version})
+Description: X.Org X server -- VIA display driver -- debugging symbols
+ OpenChrome is a project for the development of free and open-source drivers
+ for the VIA UniChrome video chipsets.
+ .
+ Originally called the 'snapshot' release, since it was a snapshot of an
+ experimental branch of the unichrome cvs code, this is a continued development
+ of the open source unichrome driver (from http://unichrome.sf.net) which
+ also incorporates support for the unichrome-pro chipsets.
+ .
+ Support for hardware acceleration (XvMC) for all chipsets has subsequently
+ been ripped out of the unichrome.sf.net driver. Therefore your only option if
+ you wish to make use of the acceleration features of your VIA chip with free
+ and open-source drivers is to use this version of the driver.
+ .
+ This package contains debugging symbols for OpenChrome driver.
+
 Package: xserver-xorg-video-via
 Architecture: i386 amd64 hurd-i386 kfreebsd-i386 kfreebsd-amd64 lpia
 Depends: xserver-xorg-video-openchrome, ${misc:Depends}
