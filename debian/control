@@ -53,7 +53,8 @@ Description: X.Org X server -- VIA display driver
 Package: xserver-xorg-video-openchrome-dbg
 Architecture: i386 amd64 hurd-i386 kfreebsd-i386 kfreebsd-amd64 lpia
 Section: debug
-Depends: xserver-xorg-video-openchrome (= ${binary:Version})
+Priority: extra
+Depends: xserver-xorg-video-openchrome (= ${binary:Version}), ${misc:Depends}
 Description: X.Org X server -- VIA display driver -- debugging symbols
  OpenChrome is a project for the development of free and open-source drivers
  for the VIA UniChrome video chipsets.
