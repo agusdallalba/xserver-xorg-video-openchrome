@@ -4,6 +4,7 @@ xserver-xorg-video-openchrome (1:0.2.904+svn842-2) UNRELEASED; urgency=high
     r830, leading to system freeze (Closes: #597379). Many thanks to
     Nethanel Elzas for the actual testing.
   * Set urgency to “high” accordingly.
+  * Add myself to Uploaders.
 
  -- Cyril Brulebois <kibi@debian.org>  Thu, 30 Sep 2010 17:51:49 +0200
 
