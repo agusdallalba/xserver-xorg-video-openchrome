@@ -1,3 +1,11 @@
+xserver-xorg-video-openchrome (1:0.2.904+svn842-2) UNRELEASED; urgency=low
+
+  * Cherry-pick r854 to fix initialization issues on amd64 introduced in
+    r830, leading to system freeze (Closes: #597379). Many thanks to
+    Nethanel Elzas for the actual testing.
+
+ -- Cyril Brulebois <kibi@debian.org>  Thu, 30 Sep 2010 17:51:49 +0200
+
 xserver-xorg-video-openchrome (1:0.2.904+svn842-1) unstable; urgency=low
 
   * New upstream snapshot
