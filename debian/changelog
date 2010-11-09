@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome (1:0.2.904+svn858-1) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.904+svn858-1) experimental; urgency=low
 
   [ Julien Viard de Galbert ]
   * New upstream snapshot
@@ -21,7 +21,7 @@ xserver-xorg-video-openchrome (1:0.2.904+svn858-1) UNRELEASED; urgency=low
   * Build against Xserver 1.9.1 rc1.
   * Add myself to Uploaders.
 
- -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 07 Sep 2010 10:03:54 +0200
+ -- Cyril Brulebois <kibi@debian.org>  Tue, 09 Nov 2010 17:08:35 +0100
 
 xserver-xorg-video-openchrome (1:0.2.904+svn842-1) unstable; urgency=low
 
