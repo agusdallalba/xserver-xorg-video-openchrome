@@ -19,6 +19,7 @@ xserver-xorg-video-openchrome (1:0.2.904+svn858-1) UNRELEASED; urgency=low
 
   [ Cyril Brulebois ]
   * Build against Xserver 1.9.1 rc1.
+  * Add myself to Uploaders.
 
  -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 07 Sep 2010 10:03:54 +0200
 
