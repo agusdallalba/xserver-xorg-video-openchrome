@@ -1,5 +1,6 @@
 xserver-xorg-video-openchrome (1:0.2.904+svn858-1) UNRELEASED; urgency=low
 
+  [ Julien Viard de Galbert ]
   * New upstream snapshot
     + 843: Fix DFP parameter description for the ActiveDevice option
     + 845: set colorkey for 2nd_monitor
@@ -15,6 +16,9 @@ xserver-xorg-video-openchrome (1:0.2.904+svn858-1) UNRELEASED; urgency=low
     + 856: Fix XV crash on PM800 post VX855 rework
     + 857: ECS P4M800PRO-M2 (V2.0) - reported by Jandré le Roux
       + 858: fix typo in r857
+
+  [ Cyril Brulebois ]
+  * Build against Xserver 1.9.1 rc1.
 
  -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 07 Sep 2010 10:03:54 +0200
 
