@@ -72,6 +72,13 @@ viaHWCursorInit(ScreenPtr pScreen)
 			pVia->CursorMaxHeight = 32;
 			pVia->CursorSize = ((pVia->CursorMaxWidth * pVia->CursorMaxHeight) / 8) * 2;
 			break;
+		case VIA_VX900:
+			/* FIXME : ARGB cursor should work */
+			pVia->CursorARGBSupported = FALSE;
+			pVia->CursorMaxWidth = 64;
+			pVia->CursorMaxHeight = 64;
+			pVia->CursorSize = pVia->CursorMaxWidth * (pVia->CursorMaxHeight + 1) << 2;
+			break;
 		default:
 			pVia->CursorARGBSupported = TRUE;
 			pVia->CursorMaxWidth = 64;
@@ -98,6 +105,7 @@ viaHWCursorInit(ScreenPtr pScreen)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
 			if (pVia->pBIOSInfo->FirstCRTC->IsActive) {
 				pVia->CursorRegControl  = VIA_REG_HI_CONTROL0;
 				pVia->CursorRegBase     = VIA_REG_HI_BASE0;
@@ -169,6 +177,7 @@ viaHWCursorInit(ScreenPtr pScreen)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
 			if (pVia->pBIOSInfo->FirstCRTC->IsActive) {
 				VIASETREG(VIA_REG_PRIM_HI_INVTCOLOR, 0x00FFFFFF);
 				VIASETREG(VIA_REG_V327_HI_INVTCOLOR, 0x00FFFFFF);
@@ -228,6 +237,7 @@ viaCursorStore(ScrnInfoPtr pScrn)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
 		if (pVia->pBIOSInfo->FirstCRTC->IsActive) {
 	    		pVia->CursorPrimHiInvtColor = VIAGETREG(VIA_REG_PRIM_HI_INVTCOLOR);
 	    		pVia->CursorV327HiInvtColor = VIAGETREG(VIA_REG_V327_HI_INVTCOLOR);
@@ -268,6 +278,7 @@ viaCursorRestore(ScrnInfoPtr pScrn)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
 		if (pVia->pBIOSInfo->FirstCRTC->IsActive) {
 	    		VIASETREG(VIA_REG_PRIM_HI_INVTCOLOR, pVia->CursorPrimHiInvtColor);
 	    		VIASETREG(VIA_REG_V327_HI_INVTCOLOR, pVia->CursorV327HiInvtColor);
@@ -301,6 +312,7 @@ viaShowCursor(ScrnInfoPtr pScrn)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
              if (pVia->pBIOSInfo->FirstCRTC->IsActive) {
                  VIASETREG(VIA_REG_HI_CONTROL0, 0x36000005);
              }
@@ -324,7 +336,7 @@ viaShowCursor(ScrnInfoPtr pScrn)
             /* Duoview */
 	    if (pVia->CursorPipe) {
                 /* Mono Cursor Display Path [bit31]: Secondary */
-                /* FIXME For CLE266 nad KM400 try to enable 32x32 cursor size [bit1] */
+                /* FIXME For CLE266 and KM400 try to enable 32x32 cursor size [bit1] */
                 VIASETREG(VIA_REG_ALPHA_CONTROL, 0xF6000005);
             } else {
                 /* Mono Cursor Display Path [bit31]: Primary */
@@ -347,6 +359,7 @@ viaHideCursor(ScrnInfoPtr pScrn)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
              if (pVia->pBIOSInfo->FirstCRTC->IsActive) {
                  temp = VIAGETREG(VIA_REG_HI_CONTROL0);
                  VIASETREG(VIA_REG_HI_CONTROL0, temp & 0xFFFFFFFA);
@@ -395,6 +408,7 @@ viaSetCursorPosition(ScrnInfoPtr pScrn, int x, int y)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
              if (pVia->pBIOSInfo->FirstCRTC->IsActive) {                
                  VIASETREG(VIA_REG_HI_POS0,    ((x    << 16) | (y    & 0x07ff)));
                  VIASETREG(VIA_REG_HI_OFFSET0, ((xoff << 16) | (yoff & 0x07ff)));
@@ -482,6 +496,7 @@ viaLoadCursorImage(ScrnInfoPtr pScrn, unsigned char *src)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
              if (pVia->pBIOSInfo->FirstCRTC->IsActive) {
                  temp = VIAGETREG(VIA_REG_HI_CONTROL0);
                  VIASETREG(VIA_REG_HI_CONTROL0, temp & 0xFFFFFFFE);
@@ -500,7 +515,7 @@ viaLoadCursorImage(ScrnInfoPtr pScrn, unsigned char *src)
 
 /*
     Set the cursor foreground and background colors.  In 8bpp, fg and
-    bg are indicies into the current colormap unless the 
+    bg are indices into the current colormap unless the 
     HARDWARE_CURSOR_TRUECOLOR_AT_8BPP flag is set.  In that case
     and in all other bpps the fg and bg are in 8-8-8 RGB format.
 */
@@ -538,6 +553,7 @@ viaSetCursorColors(ScrnInfoPtr pScrn, int bg, int fg)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
              if (pVia->pBIOSInfo->FirstCRTC->IsActive) {
                  temp = VIAGETREG(VIA_REG_HI_CONTROL0);
                  VIASETREG(VIA_REG_HI_CONTROL0, temp & 0xFFFFFFFE);
