@@ -196,6 +196,7 @@ viaFlushPCI(ViaCommandBuffer * buf)
 					switch (pVia->Chipset) {
 					    case VIA_VX800:
 					    case VIA_VX855:
+					    case VIA_VX900:
 							while ((VIAGETREG(VIA_REG_STATUS) &
 							       (VIA_CMD_RGTR_BUSY_H5 | VIA_2D_ENG_BUSY_H5))
 									&& (loop++ < MAXLOOP)) ;
@@ -287,7 +288,7 @@ viaSetupCBuffer(ScrnInfoPtr pScrn, ViaCommandBuffer * buf, unsigned size)
 
     buf->pScrn = pScrn;
     buf->bufSize = ((size == 0) ? VIA_DMASIZE : size) >> 2;
-    buf->buf = (CARD32 *) xcalloc(buf->bufSize, sizeof(CARD32));
+    buf->buf = (CARD32 *) calloc(buf->bufSize, sizeof(CARD32));
     if (!buf->buf)
         return BadAlloc;
     buf->waitFlags = 0;
@@ -312,7 +313,7 @@ void
 viaTearDownCBuffer(ViaCommandBuffer * buf)
 {
     if (buf && buf->buf)
-        xfree(buf->buf);
+        free(buf->buf);
     buf->buf = NULL;
 }
 
@@ -419,6 +420,7 @@ viaDisableVQ(ScrnInfoPtr pScrn)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
             VIASETREG(0x41c, 0x00100000);
             VIASETREG(0x420, 0x74301000);
             break;
@@ -474,16 +476,25 @@ viaInitialize2DEngine(ScrnInfoPtr pScrn)
         VIASETREG(i, 0x0);
     }
 
-    if (pVia->Chipset == VIA_VX800 || pVia->Chipset == VIA_VX855) {
-        for (i = 0x44; i < 0x5c; i += 4) {
+    if (pVia->Chipset == VIA_VX800 || 
+        pVia->Chipset == VIA_VX855 ||
+        pVia->Chipset == VIA_VX900) {
+        for (i = 0x44; i <= 0x5c; i += 4) {
             VIASETREG(i, 0x0);
         }
+    }
+
+    if (pVia->Chipset == VIA_VX900)
+    {
+        /*410 redefine 0x30 34 38*/
+        VIASETREG(0x60, 0x0); /*already useable here*/
     }
 
     /* Make the VIA_REG() macro magic work */
     switch (pVia->Chipset) {
     case VIA_VX800:
     case VIA_VX855:
+    case VIA_VX900:
         pVia->TwodRegs = via_2d_regs_m1;
         break;
     default:
@@ -496,6 +507,7 @@ viaInitialize2DEngine(ScrnInfoPtr pScrn)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
             viaInitPCIe(pVia);
             break;
         default:
@@ -509,6 +521,7 @@ viaInitialize2DEngine(ScrnInfoPtr pScrn)
             case VIA_P4M900:
             case VIA_VX800:
             case VIA_VX855:
+            case VIA_VX900:
                 viaEnablePCIeVQ(pVia);
                 break;
             default:
@@ -536,6 +549,7 @@ viaAccelSync(ScrnInfoPtr pScrn)
     switch (pVia->Chipset) {
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
             while ((VIAGETREG(VIA_REG_STATUS) &
                     (VIA_CMD_RGTR_BUSY_H5 | VIA_2D_ENG_BUSY_H5 | VIA_3D_ENG_BUSY_H5))
                    && (loop++ < MAXLOOP)) ;
@@ -596,7 +610,9 @@ viaPitchHelper(VIAPtr pVia, unsigned dstPitch, unsigned srcPitch)
     unsigned val = (dstPitch >> 3) << 16 | (srcPitch >> 3);
     RING_VARS;
 
-    if (pVia->Chipset != VIA_VX800 && pVia->Chipset != VIA_VX855) {
+    if (pVia->Chipset != VIA_VX800 &&
+        pVia->Chipset != VIA_VX855 && 
+        pVia->Chipset != VIA_VX900) {
         val |= VIA_PITCH_ENABLE;
     }
     OUT_RING_H1(VIA_REG(pVia, PITCH), val);
@@ -1236,7 +1252,7 @@ viaInitXAA(ScreenPtr pScreen)
                              HARDWARE_CLIP_COLOR_8x8_FILL |
                              HARDWARE_CLIP_SCREEN_TO_SCREEN_COLOR_EXPAND | 0);
 
-    if (pVia->Chipset != VIA_VX855)
+    if (pVia->Chipset != VIA_VX855 && pVia->Chipset != VIA_VX900)
     	xaaptr->ClippingFlags |= (HARDWARE_CLIP_SOLID_FILL |
                                   HARDWARE_CLIP_SOLID_LINE |
                                   HARDWARE_CLIP_DASHED_LINE);
@@ -1300,7 +1316,9 @@ viaInitXAA(ScreenPtr pScreen)
     xaaptr->SubsequentScanlineCPUToScreenColorExpandFill =
             viaSubsequentScanlineCPUToScreenColorExpandFill;
     xaaptr->ColorExpandBase = pVia->BltBase;
-    if (pVia->Chipset == VIA_VX800 || pVia->Chipset == VIA_VX855)
+    if (pVia->Chipset == VIA_VX800 ||
+        pVia->Chipset == VIA_VX855 ||
+        pVia->Chipset == VIA_VX900)
         xaaptr->ColorExpandRange = VIA_MMIO_BLTSIZE;
     else
         xaaptr->ColorExpandRange = (64 * 1024);
@@ -1326,7 +1344,9 @@ viaInitXAA(ScreenPtr pScreen)
     xaaptr->SubsequentImageWriteRect = viaSubsequentImageWriteRect;
     xaaptr->ImageWriteBase = pVia->BltBase;
 
-    if (pVia->Chipset == VIA_VX800 || pVia->Chipset == VIA_VX855)
+    if (pVia->Chipset == VIA_VX800 ||
+        pVia->Chipset == VIA_VX855 ||
+        pVia->Chipset == VIA_VX900)
         xaaptr->ImageWriteRange = VIA_MMIO_BLTSIZE;
     else
         xaaptr->ImageWriteRange = (64 * 1024);
@@ -2362,7 +2382,7 @@ viaInitExa(ScreenPtr pScreen)
     }
 
     if (!exaDriverInit(pScreen, pExa)) {
-        xfree(pExa);
+        free(pExa);
         return NULL;
     }
 
@@ -2372,7 +2392,7 @@ viaInitExa(ScreenPtr pScreen)
 
 
 /*
- * Acceleration initializatuon function. Sets up offscreen memory disposition,
+ * Acceleration initialization function. Sets up offscreen memory disposition,
  * and initializes engines and acceleration method.
  */
 Bool
@@ -2560,7 +2580,7 @@ viaExitAccel(ScreenPtr pScreen)
             }
         }
         if (pVia->dBounce)
-            xfree(pVia->dBounce);
+            free(pVia->dBounce);
 #endif /* XF86DRI */
         if (pVia->scratchAddr) {
             exaOffscreenFree(pScreen, pVia->scratchFBBuffer);
@@ -2569,7 +2589,7 @@ viaExitAccel(ScreenPtr pScreen)
         if (pVia->exaDriverPtr) {
             exaDriverFini(pScreen);
         }
-        xfree(pVia->exaDriverPtr);
+        free(pVia->exaDriverPtr);
         pVia->exaDriverPtr = NULL;
         return;
     }
@@ -2595,7 +2615,7 @@ viaFinishInitAccel(ScreenPtr pScreen)
 
     if (pVia->directRenderingEnabled && pVia->useEXA) {
 
-        pVia->dBounce = xcalloc(VIA_DMA_DL_SIZE * 2, 1);
+        pVia->dBounce = calloc(VIA_DMA_DL_SIZE * 2, 1);
 
         if (!pVia->IsPCI) {
 
