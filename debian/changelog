@@ -1,4 +1,25 @@
-xserver-xorg-video-openchrome (1:0.2.904+svn858-1) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.904+svn891-1) UNRELEASED; urgency=low
+
+  * New upstream snapshot
+    + 859: Fix several typo in code comments
+    + 860: Siragon ML-6200 laptop support
+    + 861: update VX855 FIFO
+    + 862: Fix bug #342 with TV out flickering (Closes: #564688)
+    + 873: Replace the deprecated functions with new ones
+           Refer to "/xserver/include/os.h"
+    + 874: Replace remaining  xalloc to malloc
+    + 878: Change maximum line pitch and virtual height according to chipset
+    + 883: Update 1024x600 modeline
+    + 884: Add workaround for memory autodetection
+    + 887: Enable new mode switch and panel support on K8M800 and VM800
+    + 888: Merge VX900 branch to add basic VX900 support
+    + 889: fix a typo and add a FIXME following the VX900 merge
+    + 890: add VX900 to man page
+    + 891: Fix type in VIASave
+
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 21 Dec 2010 16:16:42 +0100
+
+xserver-xorg-video-openchrome (1:0.2.904+svn858-1) experimental; urgency=low
 
   * New upstream snapshot
     + 843: Fix DFP parameter description for the ActiveDevice option
