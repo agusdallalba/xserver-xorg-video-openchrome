@@ -354,6 +354,14 @@ DecideOverlaySupport(ScrnInfoPtr pScrn)
                 mClock = 333;
                 memEfficiency = (float)SINGLE_3205_133;
                 break;
+            case VIA_MEM_DDR800:
+                mClock = 400;
+                memEfficiency = (float)SINGLE_3205_133;
+                break;
+            case VIA_MEM_DDR1066:
+                mClock = 533;
+                memEfficiency = (float)SINGLE_3205_133;
+                break;
             default:
                 /*Unknow DRAM Type */
                 DBG_DD(ErrorF("Unknow DRAM Type!\n"));
@@ -426,7 +434,7 @@ DecideOverlaySupport(ScrnInfoPtr pScrn)
             DBG_DD(ErrorF(" via_video.c : totalBandwidth= %f : \n",
                 totalBandWidth));
             if (needBandWidth < totalBandWidth)
-            return TRUE;
+                return TRUE;
         }
         return FALSE;
     }
@@ -591,15 +599,15 @@ viaExitVideo(ScrnInfoPtr pScrn)
                             (viaPortPrivPtr) curAdapt->pPortPrivates->ptr + j,
                             TRUE);
                     }
-                    xfree(curAdapt->pPortPrivates->ptr);
+                    free(curAdapt->pPortPrivates->ptr);
                 }
-                xfree(curAdapt->pPortPrivates);
+                free(curAdapt->pPortPrivates);
             }
-            xfree(curAdapt);
+            free(curAdapt);
         }
     }
     if (allAdaptors)
-        xfree(allAdaptors);
+        free(allAdaptors);
 }
 
 void
@@ -660,7 +668,7 @@ viaInitVideo(ScreenPtr pScreen)
 
     DBG_DD(ErrorF(" via_video.c : num_adaptors : %d\n", num_adaptors));
     if (newAdaptors) {
-        allAdaptors = xalloc((num_adaptors + num_new) *
+        allAdaptors = malloc((num_adaptors + num_new) *
                 sizeof(XF86VideoAdaptorPtr *));
         if (allAdaptors) {
             if (num_adaptors)
@@ -858,7 +866,7 @@ viaStopVideo(ScrnInfoPtr pScrn, pointer data, Bool exit)
     if (exit) {
         ViaSwovSurfaceDestroy(pScrn, pPriv);
         if (pPriv->dmaBounceBuffer)
-            xfree(pPriv->dmaBounceBuffer);
+            free(pPriv->dmaBounceBuffer);
         pPriv->dmaBounceBuffer = 0;
         pPriv->dmaBounceStride = 0;
         pPriv->dmaBounceLines = 0;
@@ -1106,7 +1114,7 @@ viaDmaBlitImage(VIAPtr pVia,
             pPort->dmaBounceStride != bounceStride ||
             pPort->dmaBounceLines != bounceLines) {
             if (pPort->dmaBounceBuffer) {
-                xfree(pPort->dmaBounceBuffer);
+                free(pPort->dmaBounceBuffer);
                 pPort->dmaBounceBuffer = 0;
             }
             size = bounceStride * bounceLines + 16;
