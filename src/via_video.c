@@ -354,6 +354,14 @@ DecideOverlaySupport(ScrnInfoPtr pScrn)
                 mClock = 333;
                 memEfficiency = (float)SINGLE_3205_133;
                 break;
+            case VIA_MEM_DDR800:
+                mClock = 400;
+                memEfficiency = (float)SINGLE_3205_133;
+                break;
+            case VIA_MEM_DDR1066:
+                mClock = 533;
+                memEfficiency = (float)SINGLE_3205_133;
+                break;
             default:
                 /*Unknow DRAM Type */
                 DBG_DD(ErrorF("Unknow DRAM Type!\n"));
@@ -426,7 +434,7 @@ DecideOverlaySupport(ScrnInfoPtr pScrn)
             DBG_DD(ErrorF(" via_video.c : totalBandwidth= %f : \n",
                 totalBandWidth));
             if (needBandWidth < totalBandWidth)
-            return TRUE;
+                return TRUE;
         }
         return FALSE;
     }
@@ -591,15 +599,15 @@ viaExitVideo(ScrnInfoPtr pScrn)
                             (viaPortPrivPtr) curAdapt->pPortPrivates->ptr + j,
                             TRUE);
                     }
-                    xfree(curAdapt->pPortPrivates->ptr);
+                    free(curAdapt->pPortPrivates->ptr);
                 }
-                xfree(curAdapt->pPortPrivates);
+                free(curAdapt->pPortPrivates);
             }
-            xfree(curAdapt);
+            free(curAdapt);
         }
     }
     if (allAdaptors)
-        xfree(allAdaptors);
+        free(allAdaptors);
 }
 
 void
@@ -660,7 +668,7 @@ viaInitVideo(ScreenPtr pScreen)
 
     DBG_DD(ErrorF(" via_video.c : num_adaptors : %d\n", num_adaptors));
     if (newAdaptors) {
-        allAdaptors = xalloc((num_adaptors + num_new) *
+        allAdaptors = malloc((num_adaptors + num_new) *
                 sizeof(XF86VideoAdaptorPtr *));
         if (allAdaptors) {
             if (num_adaptors)
@@ -858,7 +866,7 @@ viaStopVideo(ScrnInfoPtr pScrn, pointer data, Bool exit)
     if (exit) {
         ViaSwovSurfaceDestroy(pScrn, pPriv);
         if (pPriv->dmaBounceBuffer)
-            xfree(pPriv->dmaBounceBuffer);
+            free(pPriv->dmaBounceBuffer);
         pPriv->dmaBounceBuffer = 0;
         pPriv->dmaBounceStride = 0;
         pPriv->dmaBounceLines = 0;
@@ -999,6 +1007,7 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
         unsigned long DisplayBufferIndex)
 {
     unsigned long proReg = 0;
+    unsigned count = 50000;
 
     if (pVia->ChipId == PCI_CHIP_VT3259
         && !(pVia->swov.gdwVideoFlagSW & VIDEO_1_INUSE))
@@ -1010,7 +1019,8 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
         case FOURCC_RV15:
         case FOURCC_RV16:
         case FOURCC_RV32:
-            while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP));
+            while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP)
+                    && --count);
             VIDOutD(HQV_SRC_STARTADDR_Y + proReg,
                 pVia->swov.SWDevice.dwSWPhysicalAddr[DisplayBufferIndex]);
             VIDOutD(HQV_CONTROL + proReg,
@@ -1019,7 +1029,8 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
             break;
         case FOURCC_YV12:
         default:
-            while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP));
+            while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP)
+                    && --count);
             VIDOutD(HQV_SRC_STARTADDR_Y + proReg,
                 pVia->swov.SWDevice.dwSWPhysicalAddr[DisplayBufferIndex]);
             if (pVia->VideoEngine == VIDEO_ENGINE_CME) {
@@ -1103,7 +1114,7 @@ viaDmaBlitImage(VIAPtr pVia,
             pPort->dmaBounceStride != bounceStride ||
             pPort->dmaBounceLines != bounceLines) {
             if (pPort->dmaBounceBuffer) {
-                xfree(pPort->dmaBounceBuffer);
+                free(pPort->dmaBounceBuffer);
                 pPort->dmaBounceBuffer = 0;
             }
             size = bounceStride * bounceLines + 16;
@@ -1365,6 +1376,7 @@ viaPutImage(ScrnInfoPtr pScrn,
                     && (pVia->old_dwUseExtendedFIFO == dwUseExtendedFIFO)
                     && (pVia->VideoStatus & VIDEO_SWOV_ON) &&
                     REGION_EQUAL(pScrn->pScreen, &pPriv->clip, clipBoxes)) {
+                DBG_DD(ErrorF(" via_video.c : don't do UpdateOverlay! \n"));
                 viaXvError(pScrn, pPriv, xve_none);
                 return Success;
             }
@@ -1444,7 +1456,6 @@ viaQueryImageAttributes(ScrnInfoPtr pScrn,
 
     switch (id) {
         case FOURCC_YV12: /*Planar format : YV12 -4:2:0 */
-        case FOURCC_I420:
             *h = (*h + 1) & ~1;
             size = *w;
             if (pVia->useDmaBlit)

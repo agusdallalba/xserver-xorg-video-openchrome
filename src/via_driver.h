@@ -127,7 +127,7 @@ typedef struct {
     CARD8   SR27, SR28, SR29, SR2A,SR2B,SR2C,SR2D,SR2E;
     CARD8   SR2F, SR30, SR31, SR32,SR33,SR34,SR40,SR41;
     CARD8   SR42, SR43, SR44, SR45,SR46,SR47,SR48,SR49;
-    CARD8   SR4A, SR4B, SR4C;
+    CARD8   SR4A, SR4B, SR4C, SR4D;
 
     /*   extended CRTC registers */
     CARD8   CR0C, CR0D;
@@ -143,7 +143,7 @@ typedef struct {
 } VIARegRec, *VIARegPtr;
 
 /*
- * varables that need to be shared among different screens.
+ * variables that need to be shared among different screens.
  */
 typedef struct {
     Bool b3DRegsInitialized;
@@ -286,6 +286,7 @@ typedef struct _VIA {
     Bool                agpDMA;
     Bool                nPOT[VIA_NUM_TEXUNITS];
     const unsigned     *TwodRegs;
+    const unsigned     *HqvCmeRegs;
     ExaDriverPtr        exaDriverPtr;
     ExaOffscreenArea   *exa_scratch;
     unsigned int        exa_scratch_next;
@@ -413,6 +414,8 @@ typedef struct _VIA {
     void                *cursorMap;
     CARD32              cursorOffset;
 
+    CARD8               I2CDevices;	/* Option */
+
 #ifdef HAVE_DEBUG
     Bool                disableXvBWCheck;
     Bool                DumpVGAROM;
@@ -434,7 +437,7 @@ typedef struct
     Bool HasSecondary;
     Bool BypassSecondary;
     /*These two registers are used to make sure the CRTC2 is
-      retored before CRTC_EXT, otherwise it could lead to blank screen.*/
+      restored before CRTC_EXT, otherwise it could lead to blank screen.*/
     Bool IsSecondaryRestored;
     Bool RestorePrimary;
 

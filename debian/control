@@ -4,13 +4,10 @@ Priority: optional
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
 Uploaders: Julien Viard de Galbert <julien@vdg.blogsite.org>, Cyril Brulebois <kibi@debian.org>
 Build-Depends:
- debhelper (>= 5),
- autotools-dev,
- autoconf,
- automake,
- libtool,
+ debhelper (>= 8),
+ dh-autoreconf,
  pkg-config,
- xserver-xorg-dev (>= 2:1.7.6.901),
+ xserver-xorg-dev (>= 2:1.9.4),
  x11proto-core-dev,
  x11proto-fonts-dev,
  x11proto-randr-dev,
@@ -32,10 +29,12 @@ Vcs-Browser: http://git.debian.org/?p=pkg-xorg/driver/xserver-xorg-video-openchr
 
 Package: xserver-xorg-video-openchrome
 Architecture: i386 amd64 hurd-i386 kfreebsd-i386 kfreebsd-amd64 lpia
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${xviddriver:Depends}
-Provides: ${xviddriver:Provides}
-Conflicts: libchromexvmc1, libchromexvmcpro1
-Replaces: libchromexvmc1, libchromexvmcpro1
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ ${xviddriver:Depends},
+Provides:
+ ${xviddriver:Provides}
 Description: X.Org X server -- VIA display driver
  OpenChrome is a project for the development of free and open-source drivers
  for the VIA UniChrome video chipsets.
@@ -52,7 +51,9 @@ Description: X.Org X server -- VIA display driver
 
 Package: xserver-xorg-video-via
 Architecture: i386 amd64 hurd-i386 kfreebsd-i386 kfreebsd-amd64 lpia
-Depends: xserver-xorg-video-openchrome, ${misc:Depends}
+Depends:
+ xserver-xorg-video-openchrome,
+ ${misc:Depends},
 Description: X.Org X server -- VIA display driver (dummy transitional package)
  This transitional package helps users transition to the OpenChrome driver.
  Once this package and its dependencies are installed you can safely remove it.
