@@ -25,6 +25,8 @@ xserver-xorg-video-openchrome (1:0.2.904+svn891-1) UNRELEASED; urgency=low
     - Bump xserver-xorg-dev build-dep for dh_xsf_substvars and xsf
       debhelper sequence.
     - Use a .install to install everything in the first package.
+    - Use debian/xserver-xorg-video-openchrome.lintian-overrides instead
+      of manually installing debian/overrides. dh_lintian is our friend.
 
  -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 21 Dec 2010 16:16:42 +0100
 
