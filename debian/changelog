@@ -28,6 +28,7 @@ xserver-xorg-video-openchrome (1:0.2.904+svn891-1) UNRELEASED; urgency=low
     - Use debian/xserver-xorg-video-openchrome.lintian-overrides instead
       of manually installing debian/overrides. dh_lintian is our friend.
     - Use a .docs to get NEWS installed.
+  * Remove xsfbs accordingly.
 
  -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 21 Dec 2010 16:16:42 +0100
 
