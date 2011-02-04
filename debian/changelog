@@ -30,6 +30,7 @@ xserver-xorg-video-openchrome (1:0.2.904+svn891-1) UNRELEASED; urgency=low
     - Use a .docs to get NEWS installed.
   * Remove xsfbs accordingly.
   * Remove long obsolete Replaces/Conflicts.
+  * Wrap Depends/Provides.
 
  -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 21 Dec 2010 16:16:42 +0100
 
