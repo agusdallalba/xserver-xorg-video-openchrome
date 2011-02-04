@@ -1,5 +1,6 @@
 xserver-xorg-video-openchrome (1:0.2.904+svn891-1) UNRELEASED; urgency=low
 
+  [ Julien Viard de Galbert ]
   * New upstream snapshot
     + 859: Fix several typo in code comments
     + 860: Siragon ML-6200 laptop support
@@ -16,6 +17,14 @@ xserver-xorg-video-openchrome (1:0.2.904+svn891-1) UNRELEASED; urgency=low
     + 889: fix a typo and add a FIXME following the VX900 merge
     + 890: add VX900 to man page
     + 891: Fix type in VIASave
+
+  [ Cyril Brulebois ]
+  * Switch to dh:
+    - Use debhelper 8.
+    - Use dh-autoreconf.
+    - Bump xserver-xorg-dev build-dep for dh_xsf_substvars and xsf
+      debhelper sequence.
+    - Use a .install to install everything in the first package.
 
  -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 21 Dec 2010 16:16:42 +0100
 
