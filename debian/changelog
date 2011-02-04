@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome (1:0.2.904+svn891-1) experimental; urgency=low
+xserver-xorg-video-openchrome (1:0.2.904+svn891-1) UNRELEASED; urgency=low
 
   * New upstream snapshot
     + 859: Fix several typo in code comments
