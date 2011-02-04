@@ -4,10 +4,6 @@ tarballs but on openchrome subversion repository.
 Refer to the README.VCS-source file for details on how to setup git and
 git svn to fetch from both git.debian.org and svn.openchrome.org
 
-This packages also uses the X Strike Force Build System (xfsbs).
-The rest of this file comes from xfsbs and is left unmodified to ease later
-merges.
-
 ------------------------------------------------------
 Quick Guide To Patching This Package For The Impatient
 ------------------------------------------------------

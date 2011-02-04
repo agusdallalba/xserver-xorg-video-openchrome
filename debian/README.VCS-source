@@ -38,14 +38,6 @@ git svn fetch
    Note: for some reason git-svn will create a master branch if none existed,
    it can be ignored, only the refs/remotes/trunk is important.
 
-6. Setup and other remote branch for xsfbs
-
-git remote add xsfbs git://git.debian.org/pkg-xorg/xsfbs.git
-
-7. And fetch it
-
-git fetch xsfbs
-
 --------------------
 Building the package
 --------------------
