@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome packages are not based on openchrome releases
+xserver-xorg-video-openchrome packages are not based on openchrome release
 tarballs but on openchrome subversion repository.
 
 Refer to the README.VCS-source file for details on how to setup git and
