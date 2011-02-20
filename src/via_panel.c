@@ -45,17 +45,17 @@ static ViaPanelModeRec ViaPanelNativeModes[] = {
     {1280, 768},
     {1280, 1024},
     {1400, 1050},
-    {1600, 1200},   /* 0x6 Resolution 1440x900 */
+    {1440, 900},    /* 0x6 Resolution 1440x900 */
     {1280, 800},    /* 0x7 Resolution 1280x800 (Samsung NC20) */
     {800, 480},     /* 0x8 For Quanta 800x480 */
     {1024, 600},    /* 0x9 Resolution 1024x600 (for HP 2133) */
     {1366, 768},    /* 0xA Resolution 1366x768 */
-    {1920, 1080},
-    {1920, 1200},
-    {1280, 1024},   /* 0xD Need to be fixed to 1920x1200 */
-    {1440, 900},    /* 0xE Need to be fixed to 640x240 */
-    {1280, 720},    /* 0xF 480x640 */
-    {1200, 900},   /* 0x10 For Panasonic 1280x768 18bit Dual-Channel Panel */
+    {1600, 1200},   /* 0xB Resolution 1600x1200 */
+    {1680, 1050},
+    {1920, 1200},   /* 0xD Resolution 1920x1200 */
+    {640, 240},     /* 0xE Resolution 640x240 */
+    {480, 640},     /* 0xF Resolution 480x640 */
+    {1280, 768},   /* 0x10 For Panasonic 1280x768 18bit Dual-Channel Panel */
     {1360, 768},   /* 0x11 Resolution 1360X768 */
     {1024, 768},   /* 0x12 Resolution 1024x768 */
     {800, 480}     /* 0x13 General 8x4 panel use this setting */
@@ -147,6 +147,9 @@ ViaPanelScaleDisable(ScrnInfoPtr pScrn)
     vgaHWPtr hwp = VGAHWPTR(pScrn);
 
     ViaCrtcMask(hwp, 0x79, 0x00, 0x01);
+    /* Disable VX900 down scaling */
+    if (pVia->Chipset == VIA_VX900)
+        ViaCrtcMask(hwp, 0x89, 0x00, 0x01);
     if (pVia->Chipset != VIA_CLE266 && pVia->Chipset != VIA_KM400)
         ViaCrtcMask(hwp, 0xA2, 0x00, 0xC8);
 }
@@ -305,10 +308,7 @@ ViaPanelPreInit(ScrnInfoPtr pScrn)
         Bool ret;
 
         ret = ViaPanelGetSizeFromDDCv1(pScrn, &width, &height);
-/*
-        if (!ret)
-            ret = ViaPanelGetSizeFromDDCv2(pScrn, &width);
-*/
+
         if (ret) {
             panel->NativeModeIndex = ViaPanelLookUpModeIndex(width, height);
             DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "ViaPanelLookUpModeIndex, Width %d, Height %d, NativeModeIndex%d\n", width, height, panel->NativeModeIndex));
@@ -356,7 +356,7 @@ ViaPanelCenterMode(DisplayModePtr centerMode, DisplayModePtr panelMode,
 
 
 /*
- * Try to interprete EDID ourselves.
+ * Try to interpret EDID ourselves.
  */
 Bool
 ViaPanelGetSizeFromEDID(ScrnInfoPtr pScrn, xf86MonPtr pMon,
@@ -409,7 +409,6 @@ ViaPanelGetSizeFromEDID(ScrnInfoPtr pScrn, xf86MonPtr pMon,
 
 Bool
 ViaPanelGetSizeFromDDCv1(ScrnInfoPtr pScrn, int *width, int *height)
-
 {
     VIAPtr pVia = VIAPTR(pScrn);
     xf86MonPtr pMon;
@@ -419,7 +418,7 @@ ViaPanelGetSizeFromDDCv1(ScrnInfoPtr pScrn, int *width, int *height)
     if (!xf86I2CProbeAddress(pVia->pI2CBus2, 0xA0))
         return FALSE;
 
-    pMon = xf86DoEDID_DDC2(pScrn->scrnIndex, pVia->pI2CBus2);
+    pMon = xf86DoEEDID(pScrn->scrnIndex, pVia->pI2CBus2, TRUE);
     if (!pMon)
         return FALSE;
 

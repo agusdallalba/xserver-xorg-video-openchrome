@@ -143,6 +143,7 @@ static const struct pci_id_match via_device_match[] = {
    VIA_DEVICE_MATCH (PCI_CHIP_VT3327, 0 ),
    VIA_DEVICE_MATCH (PCI_CHIP_VT3353, 0 ),
    VIA_DEVICE_MATCH (PCI_CHIP_VT3409, 0 ),
+   VIA_DEVICE_MATCH (PCI_CHIP_VT3410, 0 ),
     { 0, 0, 0 },
 };
 
@@ -174,12 +175,13 @@ static SymTabRec VIAChipsets[] = {
     {VIA_K8M800,   "K8M800/K8N800"},
     {VIA_PM800,    "PM800/PM880/CN400"},
     {VIA_VM800,    "VM800/P4M800Pro/VN800/CN700"},
-    {VIA_K8M890,   "K8M890/K8N890"},
-    {VIA_P4M900,   "P4M900/VN896/CN896"},
     {VIA_CX700,    "CX700/VX700"},
+    {VIA_K8M890,   "K8M890/K8N890"},
     {VIA_P4M890,   "P4M890"},
+    {VIA_P4M900,   "P4M900/VN896/CN896"},
     {VIA_VX800,    "VX800/VX820"},
     {VIA_VX855,    "VX855/VX875"},
+    {VIA_VX900,    "VX900"},
     {-1,            NULL }
 };
 
@@ -190,12 +192,13 @@ static PciChipsets VIAPciChipsets[] = {
     {VIA_K8M800,   PCI_CHIP_VT3204,    VIA_RES_SHARED},
     {VIA_PM800,    PCI_CHIP_VT3259,    VIA_RES_SHARED},
     {VIA_VM800,    PCI_CHIP_VT3314,    VIA_RES_SHARED},
-    {VIA_K8M890,   PCI_CHIP_VT3336,    VIA_RES_SHARED},
-    {VIA_P4M900,   PCI_CHIP_VT3364,    VIA_RES_SHARED},
     {VIA_CX700,    PCI_CHIP_VT3324,    VIA_RES_SHARED},
+    {VIA_K8M890,   PCI_CHIP_VT3336,    VIA_RES_SHARED},
     {VIA_P4M890,   PCI_CHIP_VT3327,    VIA_RES_SHARED},
+    {VIA_P4M900,   PCI_CHIP_VT3364,    VIA_RES_SHARED},
     {VIA_VX800,    PCI_CHIP_VT3353,    VIA_RES_SHARED},
     {VIA_VX855,    PCI_CHIP_VT3409,    VIA_RES_SHARED},
+    {VIA_VX900,    PCI_CHIP_VT3410,    VIA_RES_SHARED},
     {-1,           -1,                 VIA_RES_UNDEF}
 };
 
@@ -219,6 +222,7 @@ typedef enum
     OPTION_ROTATE,
     OPTION_VIDEORAM,
     OPTION_ACTIVEDEVICE,
+    OPTION_I2CDEVICES,
     OPTION_BUSWIDTH,
     OPTION_CENTER,
     OPTION_PANELSIZE,
@@ -278,6 +282,7 @@ static OptionInfoRec VIAOptions[] = {
     {OPTION_MODE_SWITCH_METHOD,  "ModeSwitchMethod", OPTV_ANYSTR,  {0}, FALSE},
     {OPTION_MAX_DRIMEM,          "MaxDRIMem",        OPTV_INTEGER, {0}, FALSE},
     {OPTION_AGPMEM,              "AGPMem",           OPTV_INTEGER, {0}, FALSE},
+    {OPTION_I2CDEVICES,          "I2CDevices",       OPTV_ANYSTR,  {0}, FALSE},
     {-1,                         NULL,               OPTV_NONE,    {0}, FALSE}
 };
 
@@ -404,36 +409,36 @@ VIAFreeRec(ScrnInfoPtr pScrn)
 
         if (pBIOSInfo->Panel) {
             if (pBIOSInfo->Panel->NativeMode)
-                xfree(pBIOSInfo->Panel->NativeMode);
+                free(pBIOSInfo->Panel->NativeMode);
             if (pBIOSInfo->Panel->CenteredMode)
-                xfree(pBIOSInfo->Panel->CenteredMode);
-            xfree(pBIOSInfo->Panel);
+                free(pBIOSInfo->Panel->CenteredMode);
+            free(pBIOSInfo->Panel);
         }
 
         if (pBIOSInfo->FirstCRTC)
-            xfree(pBIOSInfo->FirstCRTC);
+            free(pBIOSInfo->FirstCRTC);
         if (pBIOSInfo->SecondCRTC)
-            xfree(pBIOSInfo->SecondCRTC);
+            free(pBIOSInfo->SecondCRTC);
         if (pBIOSInfo->Simultaneous)
-            xfree(pBIOSInfo->Simultaneous);
+            free(pBIOSInfo->Simultaneous);
         if (pBIOSInfo->Lvds)
-            xfree(pBIOSInfo->Lvds);
+            free(pBIOSInfo->Lvds);
     }
 
     if (VIAPTR(pScrn)->pVbe)
         vbeFree(VIAPTR(pScrn)->pVbe);
 
     if (pVia->VideoRegs)
-        xfree(pVia->VideoRegs);
+        free(pVia->VideoRegs);
 
     if (((VIARec *) (pScrn->driverPrivate))->pBIOSInfo->TVI2CDev)
         xf86DestroyI2CDevRec((((VIARec *) (pScrn->driverPrivate))->pBIOSInfo->
                               TVI2CDev), TRUE);
-    xfree(((VIARec *) (pScrn->driverPrivate))->pBIOSInfo);
+    free(((VIARec *) (pScrn->driverPrivate))->pBIOSInfo);
 
     VIAUnmapMem(pScrn);
 
-    xfree(pScrn->driverPrivate);
+    free(pScrn->driverPrivate);
     pScrn->driverPrivate = NULL;
 } /* VIAFreeRec */
 
@@ -516,7 +521,7 @@ VIAProbe(DriverPtr drv, int flags)
                                     numDevSections,
                                     drv,
                                     &usedChips);
-    xfree(devSections);
+    free(devSections);
 
     if (numUsed <= 0)
         return FALSE;
@@ -591,11 +596,11 @@ VIAProbe(DriverPtr drv, int flags)
                 }
                 instance++;
             }
-            xfree(pEnt);
+            free(pEnt);
         }
     }
 
-    xfree(usedChips);
+    free(usedChips);
 
     return foundScreen;
 
@@ -655,7 +660,7 @@ VIAProbeDDC(ScrnInfoPtr pScrn, int index)
     vbeInfoPtr pVbe;
 
     if (xf86LoadSubModule(pScrn, "vbe")) {
-        /* FIXME This line should be replaced to:
+        /* FIXME This line should be replaced with:
 
            pVbe = VBEExtendedInit(NULL, index, 0);
 
@@ -693,6 +698,7 @@ VIASetupDefaultOptions(ScrnInfoPtr pScrn)
     pVia->maxDriSize = 0;
     pVia->agpMem = AGP_SIZE / 1024;
     pVia->ActiveDevice = 0x00;
+    pVia->I2CDevices = 0x00;
     pVia->VideoEngine = VIDEO_ENGINE_CLE;
 #ifdef HAVE_DEBUG
     pVia->PrintVGARegs = FALSE;
@@ -722,7 +728,6 @@ VIASetupDefaultOptions(ScrnInfoPtr pScrn)
             break;
         case VIA_K8M800:
             pVia->DRIIrqEnable = FALSE;
-            pVia->UseLegacyModeSwitch = TRUE;
             break;
         case VIA_PM800:
             /* Use new mode switch to resolve many resolution and display bugs (switch to console) */
@@ -732,11 +737,19 @@ VIASetupDefaultOptions(ScrnInfoPtr pScrn)
         case VIA_VM800:
             /* New mode switch resolve bug with gamma set #282 */
             /* and with Xv after hibernate #240                */
-            /* FIXME Add panel support for this chipset        */
+            break;
+        case VIA_CX700:
+            pVia->VideoEngine = VIDEO_ENGINE_CME;
+            pVia->swov.maxWInterp = 1920;
+            pVia->swov.maxHInterp = 1080;
             break;
         case VIA_K8M890:
             pVia->VideoEngine = VIDEO_ENGINE_CME;
             pVia->agpEnable = FALSE;
+            pVia->dmaXV = FALSE;
+            break;
+        case VIA_P4M890:
+            pVia->VideoEngine = VIDEO_ENGINE_CME;
             pVia->dmaXV = FALSE;
             break;
         case VIA_P4M900:
@@ -747,20 +760,13 @@ VIASetupDefaultOptions(ScrnInfoPtr pScrn)
             pVia->dmaXV = FALSE;
             pBIOSInfo->TVDIPort = VIA_DI_PORT_DVP0; 
             break;
-        case VIA_CX700:
-            pVia->VideoEngine = VIDEO_ENGINE_CME;
-            pVia->swov.maxWInterp = 1920;
-            pVia->swov.maxHInterp = 1080;
-            break;
-        case VIA_P4M890:
-            pVia->VideoEngine = VIDEO_ENGINE_CME;
-            pVia->dmaXV = FALSE;
-            break;
+
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
             pVia->VideoEngine = VIDEO_ENGINE_CME;
-            /* pVia->agpEnable = FALSE;
-            pVia->dmaXV = FALSE;*/
+            pVia->agpEnable = FALSE;
+            pVia->dmaXV = FALSE;
             break;
     }
 
@@ -822,7 +828,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
     pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
 #ifndef XSERVER_LIBPCIACCESS
     if (pEnt->resources) {
-        xfree(pEnt);
+        free(pEnt);
         VIAFreeRec(pScrn);
         return FALSE;
     }
@@ -840,7 +846,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
             pPriv = xf86GetEntityPrivate(pScrn->entityList[0], gVIAEntityIndex);
             pVIAEnt = pPriv->ptr;
             if (pVIAEnt->BypassSecondary) {
-                xfree(pEnt);
+                free(pEnt);
                 VIAFreeRec(pScrn);
                 return FALSE;
             }
@@ -863,6 +869,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
             pVIAEnt->HasSecondary = FALSE;
             pVIAEnt->RestorePrimary = FALSE;
             pVIAEnt->IsSecondaryRestored = FALSE;
+           
         }
     } else {
         pVia->sharedData = xnfcalloc(sizeof(ViaSharedRec), 1);
@@ -881,7 +888,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
      */
 
     if (!xf86SetDepthBpp(pScrn, 0, 0, 0, Support32bppFb)) {
-        xfree(pEnt);
+        free(pEnt);
         VIAFreeRec(pScrn);
         return FALSE;
     } else {
@@ -896,7 +903,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
                 xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                            "Given depth (%d) is not supported by this driver\n",
                            pScrn->depth);
-                xfree(pEnt);
+                free(pEnt);
                 VIAFreeRec(pScrn);
                 return FALSE;
         }
@@ -912,7 +919,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
         rgb zeros = { 0, 0, 0 };
 
         if (!xf86SetWeight(pScrn, zeros, zeros)) {
-            xfree(pEnt);
+            free(pEnt);
             VIAFreeRec(pScrn);
             return FALSE;
         } else {
@@ -929,7 +936,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
             xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Given default visual"
                        " (%s) is not supported at depth %d.\n",
                        xf86GetVisualName(pScrn->defaultVisual), pScrn->depth);
-            xfree(pEnt);
+            free(pEnt);
             VIAFreeRec(pScrn);
             return FALSE;
         }
@@ -994,7 +1001,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86DrvMsg(pScrn->scrnIndex, from, "Chipset revision: %d\n", pVia->ChipRev);
 
-    xfree(pEnt);
+    free(pEnt);
 
     /* Detect the amount of installed RAM */
     from = X_PROBED;
@@ -1008,6 +1015,12 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
 
     switch (pVia->Chipset) {
         case VIA_CLE266:
+#ifdef XSERVER_LIBPCIACCESS
+            pci_device_cfg_read_u8(bridge, &videoRam, 0xE1);
+#else
+            videoRam = pciReadByte(pciTag(0, 0, 0), 0xE1) & 0x70;
+#endif
+            pScrn->videoRam = (1 << ((videoRam & 0x70) >> 4)) << 10;
         case VIA_KM400:
 #ifdef XSERVER_LIBPCIACCESS
             pci_device_cfg_read_u8(bridge, &videoRam, 0xE1);
@@ -1015,6 +1028,12 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
             videoRam = pciReadByte(pciTag(0, 0, 0), 0xE1) & 0x70;
 #endif
             pScrn->videoRam = (1 << ((videoRam & 0x70) >> 4)) << 10;
+            /* Workaround for #177 (VRAM probing fail on P4M800) */
+            if (pScrn->videoRam < 16384) {
+                xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+                           "Memory size detection failed: using 16 MB.\n");
+                pScrn->videoRam = 16 << 10;
+            }
             break;
         case VIA_PM800:
         case VIA_VM800:
@@ -1032,6 +1051,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
         case VIA_CX700:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
 #ifdef XSERVER_LIBPCIACCESS
             pci_device_cfg_read_u8(vgaDevice, &videoRam, 0xA1);
 #else
@@ -1061,9 +1081,10 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
             }
     }
 
-    if (from == X_PROBED)
+    if (from == X_PROBED) {
         xf86DrvMsg(pScrn->scrnIndex, from,
                    "Probed amount of VideoRAM = %d kB\n", pScrn->videoRam);
+    }
 
     if (!VIASetupDefaultOptions(pScrn)) {
         VIAFreeRec(pScrn);
@@ -1558,6 +1579,17 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
 
     pVia->videoRambytes = pScrn->videoRam << 10;
 
+    /* I2CDevices Option for I2C Initialization */
+    //pVia->I2CDevices = 0x00;
+    if ((s = xf86GetOptValString(VIAOptions, OPTION_I2CDEVICES))) {
+        if (strstr(s, "Bus1"))
+            pVia->I2CDevices |= VIA_I2C_BUS1;
+        if (strstr(s, "Bus2"))
+            pVia->I2CDevices |= VIA_I2C_BUS2;
+        if (strstr(s, "Bus3"))  
+            pVia->I2CDevices |= VIA_I2C_BUS3;
+    }
+
     if (!xf86LoadSubModule(pScrn, "i2c")) {
         VIAFreeRec(pScrn);
         return FALSE;
@@ -1571,10 +1603,13 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
     } else {
 
         if (pVia->pI2CBus1) {
-            pVia->DDC1 = xf86DoEDID_DDC2(pScrn->scrnIndex, pVia->pI2CBus1);
+            pVia->DDC1 = xf86DoEEDID(pScrn->scrnIndex, pVia->pI2CBus1, TRUE);
             if (pVia->DDC1) {
                 xf86PrintEDID(pVia->DDC1);
                 xf86SetDDCproperties(pScrn, pVia->DDC1);
+                DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                    "DDC pI2CBus1 detected a %s\n", DIGITAL(pVia->DDC1->features.input_type) ?
+                    "DFP" : "CRT"));
             }
         }
     }
@@ -1592,16 +1627,6 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
     if (!pVia->UseLegacyModeSwitch) {
         if (pBIOSInfo->Panel->IsActive)
             ViaPanelPreInit(pScrn);
-    }
-
-    if (pBIOSInfo->Panel->IsActive &&
-        ((pVia->Chipset == VIA_K8M800) ||
-         (pVia->Chipset == VIA_VM800))) {
-        xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "Panel on K8M800 and "
-                   "VM800 is currently not supported.\n");
-        xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-                   "Using VBE to set modes to work around this.\n");
-        pVia->useVBEModes = TRUE;
     }
 
     pVia->pVbe = NULL;
@@ -1627,6 +1652,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
         }
 
     } else {
+        int max_pitch, max_height;
         /* Add own modes. */
         ViaModesAttach(pScrn, pScrn->monitor);
 
@@ -1642,6 +1668,26 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
         clockRanges->clockIndex = -1;
         clockRanges->interlaceAllowed = TRUE;
         clockRanges->doubleScanAllowed = FALSE;
+
+        switch (pVia->Chipset) {
+            case VIA_CLE266:
+            case VIA_KM400:
+            case VIA_K8M800:
+            case VIA_PM800:
+            case VIA_VM800:
+                max_pitch = 3344;
+                max_height = 2508;
+            case VIA_CX700:
+            case VIA_K8M890:
+            case VIA_P4M890:
+            case VIA_P4M900:
+                max_pitch = 8192/(pScrn->bitsPerPixel >> 3)-1;
+                max_height = max_pitch;
+                break;
+            default:
+                max_pitch = 16384/(pScrn->bitsPerPixel >> 3)-1;
+                max_height = max_pitch;        
+        }
 
         /*
          * xf86ValidateModes will check that the mode HTotal and VTotal values
@@ -1669,10 +1715,10 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
                               clockRanges,               /* list of clock ranges */
                               NULL,     /* list of line pitches */
                               256,      /* minimum line pitch */
-                              3344,     /* maximum line pitch */
+                              max_pitch,     /* maximum line pitch */
                               16 * 8,   /* pitch increment (in bits), we just want 16 bytes alignment */
-                              128,      /* min height */
-                              2508,     /* max height */
+                              128,      /* min virtual height */
+                              max_height,     /* maximum virtual height */
                               pScrn->display->virtualX, /* virtual width */
                               pScrn->display->virtualY, /* virtual height */
                               pVia->videoRambytes,      /* apertureSize */
@@ -1866,6 +1912,7 @@ VIALeaveVT(int scrnIndex, int flags)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
             break;
         default:
             hwp->writeSeq(hwp, 0x1A, pVia->SavedReg.SR1A | 0x40);
@@ -2023,6 +2070,9 @@ VIASave(ScrnInfoPtr pScrn)
                 Regs->SR4C = hwp->readSeq(hwp, 0x4C);
                 break;
         }
+
+        /* Save Preemptive Arbiter Control Register */
+        Regs->SR4D = hwp->readSeq(hwp, 0x4D);
         DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Crtc...\n"));
 
         Regs->CR13 = hwp->readCrtc(hwp, 0x13);
@@ -2042,7 +2092,7 @@ VIASave(ScrnInfoPtr pScrn)
         Regs->CR0D = hwp->readCrtc(hwp, 0x0D);
         /* Starting Address Overflow Bits[28:24] */
         Regs->CR48 = hwp->readCrtc(hwp, 0x48);
-        /* CR34 are fire bits. Must be writed after CR0C CR0D CR48.  */
+        /* CR34 are fire bits. Must be written after CR0C CR0D CR48.  */
         /* Starting Address Overflow Bits[23:16] */
         Regs->CR34 = hwp->readCrtc(hwp, 0x34);
 
@@ -2080,6 +2130,7 @@ VIASave(ScrnInfoPtr pScrn)
             case VIA_CX700:
             case VIA_VX800:
             case VIA_VX855:
+            case VIA_VX900:
                 Regs->CRD2 = hwp->readCrtc(hwp, 0xD2);
                 break;
         }
@@ -2107,15 +2158,15 @@ VIARestore(ScrnInfoPtr pScrn)
     /* Unlock extended registers. */
     hwp->writeSeq(hwp, 0x10, 0x01);
 
-    /*=* CR6A, CR6B, CR6C must be reset before restore
-         standard vga regs, or system will be hang. *=*/
+    /*=* CR6A, CR6B, CR6C must be reset before restoring
+         standard vga regs, or system will hang. *=*/
     /*=* TODO Check is reset IGA2 channel before disable IGA2 channel
-         is neccesery or it may cause some line garbage. *=*/
+         is necessary or it may cause some line garbage. *=*/
     hwp->writeCrtc(hwp, 0x6A, 0x00);
     hwp->writeCrtc(hwp, 0x6B, 0x00);
     hwp->writeCrtc(hwp, 0x6C, 0x00);
     
-    /* Gamma must disable before restore pallette */
+    /* Gamma must be disabled before restoring palette */
     ViaGammaDisable(pScrn);
 
     if (pBIOSInfo->TVI2CDev)
@@ -2189,6 +2240,15 @@ VIARestore(ScrnInfoPtr pScrn)
             break;
     }
 
+    /* Restore Preemptive Arbiter Control Register
+     * VX800 and VX855 should restore this register too,
+     * but I don't do that for I don't want to affect any
+     * chips now.
+     */
+    if (pVia->Chipset == VIA_VX900) {
+        hwp->writeSeq(hwp, 0x4D, Regs->SR4D);
+    }
+
     /* Reset dotclocks. */
     ViaSeqMask(hwp, 0x40, 0x06, 0x06);
     ViaSeqMask(hwp, 0x40, 0x00, 0x06);
@@ -2213,7 +2273,7 @@ VIARestore(ScrnInfoPtr pScrn)
     hwp->writeCrtc(hwp, 0x0D, Regs->CR0D);
     /* Starting Address Overflow Bits[28:24] */
     hwp->writeCrtc(hwp, 0x48, Regs->CR48);
-    /* CR34 are fire bits. Must be writed after CR0C CR0D CR48.  */
+    /* CR34 are fire bits. Must be written after CR0C CR0D CR48.  */
     /* Starting Address Overflow Bits[23:16] */
     hwp->writeCrtc(hwp, 0x34, Regs->CR34);
     
@@ -2243,6 +2303,7 @@ VIARestore(ScrnInfoPtr pScrn)
         case VIA_CX700:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
             /* LVDS Control Register */
             hwp->writeCrtc(hwp, 0xD2, Regs->CRD2);
             break;
@@ -2272,6 +2333,7 @@ ViaMMIOEnable(ScrnInfoPtr pScrn)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
             ViaSeqMask(hwp, 0x1A, 0x08, 0x08);
             break;
         default:
@@ -2295,6 +2357,7 @@ ViaMMIODisable(ScrnInfoPtr pScrn)
         case VIA_P4M900:
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
             ViaSeqMask(hwp, 0x1A, 0x00, 0x08);
             break;
         default:
@@ -2411,10 +2474,18 @@ VIAMapFB(ScrnInfoPtr pScrn)
     VIAPtr pVia = VIAPTR(pScrn);
 
 #ifdef XSERVER_LIBPCIACCESS
-    pVia->FrameBufferBase = pVia->PciInfo->regions[0].base_addr;
+    if (pVia->Chipset == VIA_VX900) {
+        pVia->FrameBufferBase = pVia->PciInfo->regions[2].base_addr;
+    } else {
+        pVia->FrameBufferBase = pVia->PciInfo->regions[0].base_addr;
+    }
     int err;
 #else
-    pVia->FrameBufferBase = pVia->PciInfo->memBase[0];
+    if (pVia->Chipset == VIA_VX900) {
+        pVia->FrameBufferBase = pVia->PciInfo->memBase[2];
+    } else {
+        pVia->FrameBufferBase = pVia->PciInfo->memBase[0];
+    }
 #endif
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VIAMapFB\n"));
@@ -2926,7 +2997,7 @@ VIAInternalScreenInit(int scrnIndex, ScreenPtr pScreen)
 
     if (pVia->shadowFB) {
         pVia->ShadowPitch = BitmapBytePad(pScrn->bitsPerPixel * width);
-        pVia->ShadowPtr = xalloc(pVia->ShadowPitch * shadowHeight);
+        pVia->ShadowPtr = malloc(pVia->ShadowPitch * shadowHeight);
         displayWidth = pVia->ShadowPitch / (pScrn->bitsPerPixel >> 3);
         FBStart = pVia->ShadowPtr;
     } else {
@@ -2998,6 +3069,7 @@ VIAWriteMode(ScrnInfoPtr pScrn, DisplayModePtr mode)
                 case VIA_P4M900:
                 case VIA_VX800:
                 case VIA_VX855:
+                case VIA_VX900:
                     /*
                      * Since we are using virtual, we need to adjust
                      * the offset to match the framebuffer alignment.
@@ -3044,6 +3116,7 @@ VIACloseScreen(int scrnIndex, ScreenPtr pScreen)
             case VIA_P4M900:
             case VIA_VX800:
             case VIA_VX855:
+            case VIA_VX900:
                 break;
             default :
                 hwp->writeSeq(hwp, 0x1A, pVia->SavedReg.SR1A | 0x40);
@@ -3067,11 +3140,11 @@ VIACloseScreen(int scrnIndex, ScreenPtr pScreen)
 
     viaExitAccel(pScreen);
     if (pVia->ShadowPtr) {
-        xfree(pVia->ShadowPtr);
+        free(pVia->ShadowPtr);
         pVia->ShadowPtr = NULL;
     }
     if (pVia->DGAModes) {
-        xfree(pVia->DGAModes);
+        free(pVia->DGAModes);
         pVia->DGAModes = NULL;
     }
 

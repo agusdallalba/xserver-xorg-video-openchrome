@@ -196,6 +196,7 @@ viaFlushPCI(ViaCommandBuffer * buf)
 					switch (pVia->Chipset) {
 					    case VIA_VX800:
 					    case VIA_VX855:
+					    case VIA_VX900:
 							while ((VIAGETREG(VIA_REG_STATUS) &
 							       (VIA_CMD_RGTR_BUSY_H5 | VIA_2D_ENG_BUSY_H5))
 									&& (loop++ < MAXLOOP)) ;
@@ -287,7 +288,7 @@ viaSetupCBuffer(ScrnInfoPtr pScrn, ViaCommandBuffer * buf, unsigned size)
 
     buf->pScrn = pScrn;
     buf->bufSize = ((size == 0) ? VIA_DMASIZE : size) >> 2;
-    buf->buf = (CARD32 *) xcalloc(buf->bufSize, sizeof(CARD32));
+    buf->buf = (CARD32 *) calloc(buf->bufSize, sizeof(CARD32));
     if (!buf->buf)
         return BadAlloc;
     buf->waitFlags = 0;
@@ -312,7 +313,7 @@ void
 viaTearDownCBuffer(ViaCommandBuffer * buf)
 {
     if (buf && buf->buf)
-        xfree(buf->buf);
+        free(buf->buf);
     buf->buf = NULL;
 }
 
@@ -417,6 +418,9 @@ viaDisableVQ(ScrnInfoPtr pScrn)
     switch (pVia->Chipset) {
         case VIA_K8M890:
         case VIA_P4M900:
+        case VIA_VX800:
+        case VIA_VX855:
+        case VIA_VX900:
             VIASETREG(0x41c, 0x00100000);
             VIASETREG(0x420, 0x74301000);
             break;
@@ -472,16 +476,25 @@ viaInitialize2DEngine(ScrnInfoPtr pScrn)
         VIASETREG(i, 0x0);
     }
 
-    if (pVia->Chipset == VIA_VX800 || pVia->Chipset == VIA_VX855) {
-        for (i = 0x44; i < 0x5c; i += 4) {
+    if (pVia->Chipset == VIA_VX800 || 
+        pVia->Chipset == VIA_VX855 ||
+        pVia->Chipset == VIA_VX900) {
+        for (i = 0x44; i <= 0x5c; i += 4) {
             VIASETREG(i, 0x0);
         }
+    }
+
+    if (pVia->Chipset == VIA_VX900)
+    {
+        /*410 redefine 0x30 34 38*/
+        VIASETREG(0x60, 0x0); /*already useable here*/
     }
 
     /* Make the VIA_REG() macro magic work */
     switch (pVia->Chipset) {
     case VIA_VX800:
     case VIA_VX855:
+    case VIA_VX900:
         pVia->TwodRegs = via_2d_regs_m1;
         break;
     default:
@@ -492,6 +505,9 @@ viaInitialize2DEngine(ScrnInfoPtr pScrn)
     switch (pVia->Chipset) {
         case VIA_K8M890:
         case VIA_P4M900:
+        case VIA_VX800:
+        case VIA_VX855:
+        case VIA_VX900:
             viaInitPCIe(pVia);
             break;
         default:
@@ -503,6 +519,9 @@ viaInitialize2DEngine(ScrnInfoPtr pScrn)
         switch (pVia->Chipset) {
             case VIA_K8M890:
             case VIA_P4M900:
+            case VIA_VX800:
+            case VIA_VX855:
+            case VIA_VX900:
                 viaEnablePCIeVQ(pVia);
                 break;
             default:
@@ -530,6 +549,7 @@ viaAccelSync(ScrnInfoPtr pScrn)
     switch (pVia->Chipset) {
         case VIA_VX800:
         case VIA_VX855:
+        case VIA_VX900:
             while ((VIAGETREG(VIA_REG_STATUS) &
                     (VIA_CMD_RGTR_BUSY_H5 | VIA_2D_ENG_BUSY_H5 | VIA_3D_ENG_BUSY_H5))
                    && (loop++ < MAXLOOP)) ;
@@ -590,7 +610,9 @@ viaPitchHelper(VIAPtr pVia, unsigned dstPitch, unsigned srcPitch)
     unsigned val = (dstPitch >> 3) << 16 | (srcPitch >> 3);
     RING_VARS;
 
-    if (pVia->Chipset != VIA_VX800 && pVia->Chipset != VIA_VX855) {
+    if (pVia->Chipset != VIA_VX800 &&
+        pVia->Chipset != VIA_VX855 && 
+        pVia->Chipset != VIA_VX900) {
         val |= VIA_PITCH_ENABLE;
     }
     OUT_RING_H1(VIA_REG(pVia, PITCH), val);
@@ -759,6 +781,7 @@ viaSetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir, int ydir, int rop,
     tdc->cmd = cmd;
     viaAccelTransparentHelper(pVia, (trans_color != -1) ? 0x4000 : 0x0000,
                               trans_color, FALSE);
+    ADVANCE_RING;
 }
 
 static void
@@ -796,6 +819,7 @@ viaSetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop, unsigned planemask)
     tdc->cmd = VIA_GEC_BLT | VIA_GEC_FIXCOLOR_PAT | VIAACCELPATTERNROP(rop);
     tdc->fgColor = color;
     viaAccelTransparentHelper(pVia, 0x00, 0x00, FALSE);
+    ADVANCE_RING;
 }
 
 static void
@@ -852,6 +876,7 @@ viaSetupForMono8x8PatternFill(ScrnInfoPtr pScrn, int pattern0, int pattern1,
     tdc->pattern0 = pattern0;
     tdc->pattern1 = pattern1;
     viaAccelTransparentHelper(pVia, 0x00, 0x00, FALSE);
+    ADVANCE_RING;
 }
 
 static void
@@ -901,6 +926,7 @@ viaSetupForColor8x8PatternFill(ScrnInfoPtr pScrn, int patternx, int patterny,
     tdc->patternAddr = (patternx * pVia->Bpp + patterny * pVia->Bpl);
     viaAccelTransparentHelper(pVia, (trans_color != -1) ? 0x4000 : 0x0000,
                               trans_color, FALSE);
+    ADVANCE_RING;
 }
 
 static void
@@ -962,9 +988,9 @@ viaSetupForCPUToScreenColorExpandFill(ScrnInfoPtr pScrn, int fg, int bg,
     tdc->fgColor = fg;
     tdc->bgColor = bg;
 
-    ADVANCE_RING;
-
     viaAccelTransparentHelper(pVia, 0x0, 0x0, FALSE);
+
+    ADVANCE_RING;
 }
 
 static void
@@ -991,7 +1017,7 @@ viaSubsequentScanlineCPUToScreenColorExpandFill(ScrnInfoPtr pScrn, int x,
                        pScrn->fbOffset + sub * pVia->Bpl, tdc->mode,
                        pVia->Bpl, pVia->Bpl, tdc->cmd);
 
-    viaFlushPCI(cb);
+    ADVANCE_RING;
     viaDisableClipping(pScrn);
 }
 
@@ -1005,9 +1031,9 @@ viaSetupForImageWrite(ScrnInfoPtr pScrn, int rop, unsigned planemask,
     RING_VARS;
 
     tdc->cmd = VIA_GEC_BLT | VIA_GEC_SRC_SYS | VIAACCELCOPYROP(rop);
-    ADVANCE_RING;
     viaAccelTransparentHelper(pVia, (trans_color != -1) ? 0x4000 : 0x0000,
                               trans_color, FALSE);
+    ADVANCE_RING;
 }
 
 static void
@@ -1030,7 +1056,7 @@ viaSubsequentImageWriteRect(ScrnInfoPtr pScrn, int x, int y, int w, int h,
                        pScrn->fbOffset + pVia->Bpl * sub, tdc->mode,
                        pVia->Bpl, pVia->Bpl, tdc->cmd);
 
-    viaFlushPCI(cb);
+    ADVANCE_RING;
     viaDisableClipping(pScrn);
 }
 
@@ -1052,6 +1078,7 @@ viaSetupForSolidLine(ScrnInfoPtr pScrn, int color, int rop,
     OUT_RING_H1(VIA_REG(pVia, GEMODE), tdc->mode);
     OUT_RING_H1(VIA_REG(pVia, MONOPAT0), 0xFF);
     OUT_RING_H1(VIA_REG(pVia, MONOPATFGC), tdc->fgColor);
+    ADVANCE_RING;
 }
 
 static void
@@ -1189,6 +1216,7 @@ viaSetupForDashedLine(ScrnInfoPtr pScrn, int fg, int bg, int rop,
     OUT_RING_H1(VIA_REG(pVia, MONOPATFGC), tdc->fgColor);
     OUT_RING_H1(VIA_REG(pVia, MONOPATBGC), tdc->bgColor);
     OUT_RING_H1(VIA_REG(pVia, MONOPAT0), tdc->pattern0);
+    ADVANCE_RING;
 }
 
 static void
@@ -1219,13 +1247,15 @@ viaInitXAA(ScreenPtr pScreen)
 
     xaaptr->SetClippingRectangle = viaSetClippingRectangle;
     xaaptr->DisableClipping = viaDisableClipping;
-    xaaptr->ClippingFlags = (HARDWARE_CLIP_SOLID_FILL |
-                             HARDWARE_CLIP_SOLID_LINE |
-                             HARDWARE_CLIP_DASHED_LINE |
-                             HARDWARE_CLIP_SCREEN_TO_SCREEN_COPY |
+    xaaptr->ClippingFlags = (HARDWARE_CLIP_SCREEN_TO_SCREEN_COPY |
                              HARDWARE_CLIP_MONO_8x8_FILL |
                              HARDWARE_CLIP_COLOR_8x8_FILL |
                              HARDWARE_CLIP_SCREEN_TO_SCREEN_COLOR_EXPAND | 0);
+
+    if (pVia->Chipset != VIA_VX855 && pVia->Chipset != VIA_VX900)
+    	xaaptr->ClippingFlags |= (HARDWARE_CLIP_SOLID_FILL |
+                                  HARDWARE_CLIP_SOLID_LINE |
+                                  HARDWARE_CLIP_DASHED_LINE);
 
     xaaptr->Sync = viaAccelSync;
 
@@ -1286,7 +1316,9 @@ viaInitXAA(ScreenPtr pScreen)
     xaaptr->SubsequentScanlineCPUToScreenColorExpandFill =
             viaSubsequentScanlineCPUToScreenColorExpandFill;
     xaaptr->ColorExpandBase = pVia->BltBase;
-    if (pVia->Chipset == VIA_VX800 || pVia->Chipset == VIA_VX855)
+    if (pVia->Chipset == VIA_VX800 ||
+        pVia->Chipset == VIA_VX855 ||
+        pVia->Chipset == VIA_VX900)
         xaaptr->ColorExpandRange = VIA_MMIO_BLTSIZE;
     else
         xaaptr->ColorExpandRange = (64 * 1024);
@@ -1297,8 +1329,8 @@ viaInitXAA(ScreenPtr pScreen)
                                SCANLINE_PAD_DWORD |
                                BIT_ORDER_IN_BYTE_MSBFIRST |
                                LEFT_EDGE_CLIPPING | 
-			       ROP_NEEDS_SOURCE | 0);
-                               // SYNC_AFTER_IMAGE_WRITE | 0);
+			       ROP_NEEDS_SOURCE |
+                               NO_GXCOPY | 0);
 
     /*
      * Most Unichromes are much faster using processor-to-framebuffer writes
@@ -1308,21 +1340,13 @@ viaInitXAA(ScreenPtr pScreen)
      * TODO Check speed for other chipsets
      */
 
-    switch (pVia->Chipset) {
-        case VIA_P4M900:
-        case VIA_VX800:
-        case VIA_VX855:
-            break;
-        default:
-            xaaptr->ImageWriteFlags |= NO_GXCOPY;
-            break;
-    }
-
     xaaptr->SetupForImageWrite = viaSetupForImageWrite;
     xaaptr->SubsequentImageWriteRect = viaSubsequentImageWriteRect;
     xaaptr->ImageWriteBase = pVia->BltBase;
 
-    if (pVia->Chipset == VIA_VX800 || pVia->Chipset == VIA_VX855)
+    if (pVia->Chipset == VIA_VX800 ||
+        pVia->Chipset == VIA_VX855 ||
+        pVia->Chipset == VIA_VX900)
         xaaptr->ImageWriteRange = VIA_MMIO_BLTSIZE;
     else
         xaaptr->ImageWriteRange = (64 * 1024);
@@ -2358,7 +2382,7 @@ viaInitExa(ScreenPtr pScreen)
     }
 
     if (!exaDriverInit(pScreen, pExa)) {
-        xfree(pExa);
+        free(pExa);
         return NULL;
     }
 
@@ -2368,7 +2392,7 @@ viaInitExa(ScreenPtr pScreen)
 
 
 /*
- * Acceleration initializatuon function. Sets up offscreen memory disposition,
+ * Acceleration initialization function. Sets up offscreen memory disposition,
  * and initializes engines and acceleration method.
  */
 Bool
@@ -2556,7 +2580,7 @@ viaExitAccel(ScreenPtr pScreen)
             }
         }
         if (pVia->dBounce)
-            xfree(pVia->dBounce);
+            free(pVia->dBounce);
 #endif /* XF86DRI */
         if (pVia->scratchAddr) {
             exaOffscreenFree(pScreen, pVia->scratchFBBuffer);
@@ -2565,7 +2589,7 @@ viaExitAccel(ScreenPtr pScreen)
         if (pVia->exaDriverPtr) {
             exaDriverFini(pScreen);
         }
-        xfree(pVia->exaDriverPtr);
+        free(pVia->exaDriverPtr);
         pVia->exaDriverPtr = NULL;
         return;
     }
@@ -2591,7 +2615,7 @@ viaFinishInitAccel(ScreenPtr pScreen)
 
     if (pVia->directRenderingEnabled && pVia->useEXA) {
 
-        pVia->dBounce = xcalloc(VIA_DMA_DL_SIZE * 2, 1);
+        pVia->dBounce = calloc(VIA_DMA_DL_SIZE * 2, 1);
 
         if (!pVia->IsPCI) {
 
