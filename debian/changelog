@@ -1,3 +1,21 @@
+xserver-xorg-video-openchrome (1:0.2.904+svn916-1) UNRELEASED; urgency=low
+
+  * New upstream snapshot
+    + 904: FIC CE2A1
+    + 905: MSI PM8M-V
+    + 906: Use DRICreatePCIBusID when available to create Bus ID string
+    + 907: Restore video interrupt flag
+    + 908: Fix hardware cursor for VX900
+    + 909: Fix OpenGL application crash on VX900 chipset
+    + 912: Lenovo ThinkCenter E51 8714 (reported by José Jorge)
+    + 913: Fix VIA VB8001 Mini-ITX Board (P4M900) support
+    + 914: Add suport for Semp Informática Notebook IS 1462 (reported by Colin)
+    + 915: Fix #395 - revert ViaPanelGetSizeFromDDC renaming
+           thanks to Selim T. Erdogan (Closes: #614022)
+    + 916: Add workaround for #177 ticket
+
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Sun, 20 Feb 2011 14:00:15 +0100
+
 xserver-xorg-video-openchrome (1:0.2.904+svn891-1) unstable; urgency=low
 
   [ Julien Viard de Galbert ]
