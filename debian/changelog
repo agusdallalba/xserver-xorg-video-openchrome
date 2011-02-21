@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome (1:0.2.904+svn916-1) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.904+svn916-1) unstable; urgency=low
 
   * New upstream snapshot
     + 904: FIC CE2A1
@@ -14,7 +14,7 @@ xserver-xorg-video-openchrome (1:0.2.904+svn916-1) UNRELEASED; urgency=low
            thanks to Selim T. Erdogan (Closes: #614022)
     + 916: Add workaround for #177 ticket
 
- -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Sun, 20 Feb 2011 14:00:15 +0100
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Mon, 21 Feb 2011 12:33:59 +0100
 
 xserver-xorg-video-openchrome (1:0.2.904+svn891-1) unstable; urgency=low
 
