@@ -1,6 +1,7 @@
 xserver-xorg-video-openchrome (1:0.2.904+svn916-2) UNRELEASED; urgency=low
 
   * Adding debug package
+  * Removed the dummy transitional package -via
 
  -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Fri, 25 Feb 2011 15:37:21 +0100
 

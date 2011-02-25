@@ -69,12 +69,3 @@ Description: X.Org X server -- VIA display driver -- debugging symbols
  and open-source drivers is to use this version of the driver.
  .
  This package contains debugging symbols for OpenChrome driver.
-
-Package: xserver-xorg-video-via
-Architecture: i386 amd64 hurd-i386 kfreebsd-i386 kfreebsd-amd64 lpia
-Depends:
- xserver-xorg-video-openchrome,
- ${misc:Depends},
-Description: X.Org X server -- VIA display driver (dummy transitional package)
- This transitional package helps users transition to the OpenChrome driver.
- Once this package and its dependencies are installed you can safely remove it.
