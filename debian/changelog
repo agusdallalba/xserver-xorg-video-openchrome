@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome (1:0.2.904+svn916-2) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.904+svn916-2) experimental; urgency=low
 
   [ Julien Viard de Galbert ]
   * Adding debug package
@@ -8,7 +8,7 @@ xserver-xorg-video-openchrome (1:0.2.904+svn916-2) UNRELEASED; urgency=low
   * Add DM-Upload-Allowed: yes, Julien is doing a good job, let's allow
     him to perform uploads.
 
- -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Fri, 25 Feb 2011 15:37:21 +0100
+ -- Cyril Brulebois <kibi@debian.org>  Fri, 25 Feb 2011 16:28:22 +0100
 
 xserver-xorg-video-openchrome (1:0.2.904+svn916-1) unstable; urgency=low
 
