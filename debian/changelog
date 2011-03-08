@@ -1,8 +1,8 @@
-xserver-xorg-video-openchrome (1:0.2.904+svn916-3) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.904+svn916-3) unstable; urgency=low
 
   * Wrap Depends for debug package also
 
- -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 08 Mar 2011 17:14:01 +0100
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 08 Mar 2011 17:19:15 +0100
 
 xserver-xorg-video-openchrome (1:0.2.904+svn916-2) experimental; urgency=low
 
