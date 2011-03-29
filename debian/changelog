@@ -1,3 +1,9 @@
+xserver-xorg-video-openchrome (1:0.2.904+svn916-4) UNRELEASED; urgency=low
+
+  * Fix build on hurd-i386, thanks Samuel Thibault. (Closes: #619863)
+
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 29 Mar 2011 11:12:32 +0200
+
 xserver-xorg-video-openchrome (1:0.2.904+svn916-3) unstable; urgency=low
 
   * Wrap Depends for debug package also
