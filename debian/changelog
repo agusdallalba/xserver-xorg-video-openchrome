@@ -1,11 +1,11 @@
-xserver-xorg-video-openchrome (1:0.2.904+svn918-1) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.904+svn918-1) unstable; urgency=low
 
   * New upstream snapshot
     + 917: Add HP t5550 Thin Client support (thanks to dna67)
     + 918: Fix resolution detection for OLPC 1.5
   * Fix build on hurd-i386, thanks Samuel Thibault. (Closes: #619863)
 
- -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Wed, 30 Mar 2011 16:46:34 +0200
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Wed, 30 Mar 2011 17:17:32 +0200
 
 xserver-xorg-video-openchrome (1:0.2.904+svn916-3) unstable; urgency=low
 
