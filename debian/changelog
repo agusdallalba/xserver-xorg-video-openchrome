@@ -1,11 +1,11 @@
-xserver-xorg-video-openchrome (1:0.2.904+svn920-1) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.904+svn920-1) unstable; urgency=low
 
   * New upstream snapshot
     + 919: Sharp Mebius PC-CS30H
     + 920: Fix Xvideo crash on X.Org server 1.10
   * Update standards version, no changes required
 
- -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Wed, 04 May 2011 11:38:52 +0200
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Wed, 04 May 2011 22:44:26 +0200
 
 xserver-xorg-video-openchrome (1:0.2.904+svn918-1) unstable; urgency=low
 
