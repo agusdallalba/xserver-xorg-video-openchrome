@@ -1,3 +1,19 @@
+xserver-xorg-video-openchrome (1:0.2.904+svn1050-1) UNRELEASED; urgency=low
+
+  * New upstream snapshot
+    + 921: Fix XAA displaying issues
+    + 922: Fix cursor garbare after suspend/hibernate/resume
+           on VX855/VX900 chipsets #405
+    + 923: Revert r922 changes (it added I420 support)
+    + 924: Fix cursor garbage after suspen/resume for VX855 and VX900 (#405)
+    + 925: Workaround EXA crash with new libcairo2 (#298)
+    + 933: MSI PM9M-V (reported by Florin Rentea)
+    + 1014: Hewlett Packard DX2020
+    + 1037: ASRock PV530
+    + 1050: Handle X server 1.12 (videoabi 12) (patch from Adam Jackson)  
+
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Sun, 12 Feb 2012 16:20:11 +0100
+
 xserver-xorg-video-openchrome (1:0.2.904+svn920-1) unstable; urgency=low
 
   * New upstream snapshot
