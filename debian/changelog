@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome (1:0.2.904+svn1050-1) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.2.904+svn1050-1) unstable; urgency=low
 
   * New upstream snapshot
     + 921: Fix XAA displaying issues
@@ -12,7 +12,7 @@ xserver-xorg-video-openchrome (1:0.2.904+svn1050-1) UNRELEASED; urgency=low
     + 1037: ASRock PV530
     + 1050: Handle X server 1.12 (videoabi 12) (patch from Adam Jackson)  
 
- -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Sun, 12 Feb 2012 16:20:11 +0100
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Sun, 12 Feb 2012 20:19:22 +0100
 
 xserver-xorg-video-openchrome (1:0.2.904+svn920-1) unstable; urgency=low
 
