@@ -1,6 +1,9 @@
 xserver-xorg-video-openchrome (1:0.2.906-1) UNRELEASED; urgency=low
 
   * New upstream release (Closes: #676507).
+  * New patch: 10-Deal-with-xserver-1.12.diff (Closes: #675407), with
+    thanks to Leon Winter for testing the initial patch and proposing
+    a working one.
 
  -- Cyril Brulebois <kibi@debian.org>  Fri, 08 Jun 2012 12:50:09 +0200
 
