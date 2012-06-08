@@ -9,6 +9,7 @@ Build-Depends:
  dh-autoreconf,
  pkg-config,
  xserver-xorg-dev (>= 2:1.9.4),
+ xutils-dev,
  x11proto-core-dev,
  x11proto-fonts-dev,
  x11proto-randr-dev,
