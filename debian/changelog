@@ -1,3 +1,9 @@
+xserver-xorg-video-openchrome (1:0.2.906-1) UNRELEASED; urgency=low
+
+  * New upstream release (Closes: #676507).
+
+ -- Cyril Brulebois <kibi@debian.org>  Fri, 08 Jun 2012 12:50:09 +0200
+
 xserver-xorg-video-openchrome (1:0.2.904+svn1050-1) unstable; urgency=low
 
   * New upstream snapshot
