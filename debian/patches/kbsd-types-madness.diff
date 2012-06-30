@@ -1,0 +1,18 @@
+From: Steven Chamberlain <steven@pyro.eu.org>
+Subject: include stdint.h before via_drm.h for kfreebsd
+
+http://bugs.debian.org/677260
+
+Index: xserver-xorg-video-openchrome/src/via_xvmc.h
+===================================================================
+--- xserver-xorg-video-openchrome.orig/src/via_xvmc.h
++++ xserver-xorg-video-openchrome/src/via_xvmc.h
+@@ -26,6 +26,8 @@
+ #ifndef _VIA_XVMC_H
+ #define _VIA_XVMC_H 1
+ 
++#include <stdint.h>
++
+ #include "via_drm.h"
+ 
+ /*

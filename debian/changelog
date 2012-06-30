@@ -1,3 +1,9 @@
+xserver-xorg-video-openchrome (1:0.2.906-2) unstable; urgency=low
+
+  * Fix FTBFS on kfreebsd with patch from Steven Chamberlain (closes: #677260)
+
+ -- Julien Cristau <jcristau@debian.org>  Sat, 30 Jun 2012 12:21:58 +0200
+
 xserver-xorg-video-openchrome (1:0.2.906-1) unstable; urgency=low
 
   * New upstream release (Closes: #676507).
