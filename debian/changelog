@@ -1,0 +1,397 @@
+xserver-xorg-video-openchrome (1:0.2.906-1) unstable; urgency=low
+
+  * New upstream release (Closes: #676507).
+  * New patch: 10-Deal-with-xserver-1.12.diff (Closes: #675407), with
+    thanks to Leon Winter for testing the initial patch and proposing
+    a working one.
+  * Add xutils-dev build-dep.
+
+ -- Cyril Brulebois <kibi@debian.org>  Fri, 08 Jun 2012 12:49:04 +0000
+
+xserver-xorg-video-openchrome (1:0.2.904+svn1050-1) unstable; urgency=low
+
+  * New upstream snapshot
+    + 921: Fix XAA displaying issues
+    + 922: Fix cursor garbare after suspend/hibernate/resume
+           on VX855/VX900 chipsets #405
+    + 923: Revert r922 changes (it added I420 support)
+    + 924: Fix cursor garbage after suspen/resume for VX855 and VX900 (#405)
+    + 925: Workaround EXA crash with new libcairo2 (#298)
+    + 933: MSI PM9M-V (reported by Florin Rentea)
+    + 1014: Hewlett Packard DX2020
+    + 1037: ASRock PV530
+    + 1050: Handle X server 1.12 (videoabi 12) (patch from Adam Jackson)  
+
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Sun, 12 Feb 2012 20:19:22 +0100
+
+xserver-xorg-video-openchrome (1:0.2.904+svn920-1) unstable; urgency=low
+
+  * New upstream snapshot
+    + 919: Sharp Mebius PC-CS30H
+    + 920: Fix Xvideo crash on X.Org server 1.10
+  * Update standards version, no changes required
+
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Wed, 04 May 2011 22:44:26 +0200
+
+xserver-xorg-video-openchrome (1:0.2.904+svn918-1) unstable; urgency=low
+
+  * New upstream snapshot
+    + 917: Add HP t5550 Thin Client support (thanks to dna67)
+    + 918: Fix resolution detection for OLPC 1.5
+  * Fix build on hurd-i386, thanks Samuel Thibault. (Closes: #619863)
+
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Wed, 30 Mar 2011 17:17:32 +0200
+
+xserver-xorg-video-openchrome (1:0.2.904+svn916-3) unstable; urgency=low
+
+  * Wrap Depends for debug package also
+
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Tue, 08 Mar 2011 17:19:15 +0100
+
+xserver-xorg-video-openchrome (1:0.2.904+svn916-2) experimental; urgency=low
+
+  [ Julien Viard de Galbert ]
+  * Adding debug package
+  * Removed the dummy transitional package -via
+
+  [ Cyril Brulebois ]
+  * Add DM-Upload-Allowed: yes, Julien is doing a good job, let's allow
+    him to perform uploads.
+
+ -- Cyril Brulebois <kibi@debian.org>  Fri, 25 Feb 2011 16:28:22 +0100
+
+xserver-xorg-video-openchrome (1:0.2.904+svn916-1) unstable; urgency=low
+
+  * New upstream snapshot
+    + 904: FIC CE2A1
+    + 905: MSI PM8M-V
+    + 906: Use DRICreatePCIBusID when available to create Bus ID string
+    + 907: Restore video interrupt flag
+    + 908: Fix hardware cursor for VX900
+    + 909: Fix OpenGL application crash on VX900 chipset
+    + 912: Lenovo ThinkCenter E51 8714 (reported by José Jorge)
+    + 913: Fix VIA VB8001 Mini-ITX Board (P4M900) support
+    + 914: Add suport for Semp Informática Notebook IS 1462 (reported by Colin)
+    + 915: Fix #395 - revert ViaPanelGetSizeFromDDC renaming
+           thanks to Selim T. Erdogan (Closes: #614022)
+    + 916: Add workaround for #177 ticket
+
+ -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Mon, 21 Feb 2011 12:33:59 +0100
+
+xserver-xorg-video-openchrome (1:0.2.904+svn891-1) unstable; urgency=low
+
+  [ Julien Viard de Galbert ]
+  * New upstream snapshot
+    + 859: Fix several typo in code comments
+    + 860: Siragon ML-6200 laptop support
+    + 861: update VX855 FIFO
+    + 862: Fix bug #342 with TV out flickering (Closes: #564688)
+    + 873: Replace the deprecated functions with new ones
+           Refer to "/xserver/include/os.h"
+    + 874: Replace remaining  xalloc to malloc
+    + 878: Change maximum line pitch and virtual height according to chipset
+    + 883: Update 1024x600 modeline
+    + 884: Add workaround for memory autodetection
+    + 887: Enable new mode switch and panel support on K8M800 and VM800
+    + 888: Merge VX900 branch to add basic VX900 support
+    + 889: fix a typo and add a FIXME following the VX900 merge
+    + 890: add VX900 to man page
+    + 891: Fix type in VIASave
+
+  [ Cyril Brulebois ]
+  * Switch to dh:
+    - Use debhelper 8.
+    - Use dh-autoreconf.
+    - Bump xserver-xorg-dev build-dep for dh_xsf_substvars and xsf
+      debhelper sequence.
+    - Use a .install to install everything in the first package.
+    - Use debian/xserver-xorg-video-openchrome.lintian-overrides instead
+      of manually installing debian/overrides. dh_lintian is our friend.
+    - Use a .docs to get NEWS installed.
+  * Remove xsfbs accordingly.
+  * Remove long obsolete Replaces/Conflicts.
+  * Wrap Depends/Provides.
+
+ -- Cyril Brulebois <kibi@debian.org>  Sat, 05 Feb 2011 14:53:15 +0100
+
+xserver-xorg-video-openchrome (1:0.2.904+svn858-1) experimental; urgency=low
+
+  [ Julien Viard de Galbert ]
+  * New upstream snapshot
+    + 843: Fix DFP parameter description for the ActiveDevice option
+    + 845: set colorkey for 2nd_monitor
+    + 846: XVideo support for VX855
+      + 853: Revert 2 changes that should not have gone into rev 846
+    + 848: Improve 2d performance on chipsets without AGP/PCIe
+    + 849: Add option I2CDevices
+    + 850: Disable Hardware Clipping for the VX855
+    + 851: Re-Enable the VQ for VX800/VX855
+    + 852: Disable AGP and DMA by default for VX800 and VX855
+    + 854: Fixed freeze on 64bit system for K8M090 chipset
+    + 855: Increase bandwidth to handle 1920x1200 resolution with DDR266
+    + 856: Fix XV crash on PM800 post VX855 rework
+    + 857: ECS P4M800PRO-M2 (V2.0) - reported by Jandré le Roux
+      + 858: fix typo in r857
+
+  [ Cyril Brulebois ]
+  * Build against Xserver 1.9.1 rc1.
+  * Add myself to Uploaders.
+
+ -- Cyril Brulebois <kibi@debian.org>  Tue, 09 Nov 2010 17:08:35 +0100
+
+xserver-xorg-video-openchrome (1:0.2.904+svn842-2) unstable; urgency=high
+
+  * Cherry-pick r854 to fix initialization issues on amd64 introduced in
+    r830, leading to system freeze (Closes: #597379). Many thanks to
+    Nethanel Elzas for the actual testing.
+  * Set urgency to “high” accordingly.
+  * Add myself to Uploaders.
+
+ -- Cyril Brulebois <kibi@debian.org>  Thu, 30 Sep 2010 18:11:53 +0200
+
+xserver-xorg-video-openchrome (1:0.2.904+svn842-1) unstable; urgency=low
+
+  * New upstream snapshot
+    + 829: FIC PTM800Pro LF
+    + 837: MSI K8M890M2-V
+    + 838: Fix bug with suspend and VT switch on VX800 chipset on 64bit sys
+    + 840: Fix segfaults with EXA and XV
+
+  [ Timo Aaltonen ]
+  * Build against Xserver 1.7.
+  * Remove 01_gen_pci_ids.diff. The X server now uses an internal table to
+    choose a driver during autoconfiguration.
+
+  [ Julien Cristau ]
+  * Rename the build directory to not include DEB_BUILD_GNU_TYPE for no
+    good reason.  Thanks, Colin Watson!
+
+  [ Raphael Geissert ]
+  * Manpage typos patch merged upstream
+  * Fix watch file not to accept 'latest' as upstream version
+
+  [ Christopher James Halse Rogers ]
+  * Update xsfbs to fix build against xserver-xorg >= 1.7.6.901-1 and use new 
+    substvars in debian/control.
+
+  [ Julien Viard de Galbert ]
+  * New maintainer (Closes: #583501)
+  * Update standards version, no changes required
+
+ -- Julien Cristau <jcristau@debian.org>  Sat, 04 Sep 2010 22:36:13 +0200
+
+xserver-xorg-video-openchrome (1:0.2.904+svn827-1) unstable; urgency=low
+
+  * New upstream snapshot
+    + 816: OLPC XO 1.5
+    + 817: Add panel scale support for CLE266 and KM400
+    + 818: Enabled new mode switch for PM800 chipset,
+    + 819: Add option to enable unaccelerated RandR rotation ("SWRandR")
+    + 820: Enable new mode switch for VM800 chipsets
+    + 827: Twinhead K15V
+  * Fix some typos in the man page
+  * Update xsfbs to latest version
+
+ -- Raphael Geissert <geissert@debian.org>  Tue, 12 Jan 2010 02:13:51 -0600
+
+xserver-xorg-video-openchrome (1:0.2.904+svn812-1) unstable; urgency=low
+
+  * New upstream release + snapshot
+    + 742: VX800 integrated TMDS support
+    + 748: MSI P4M900M3-L
+    + 753: fix a segfault on shutdown when there's no Xv
+    + 755: Sharp PC-AE30J
+    + 768: Add rotate upside-down
+    + 775: Add support of the VIA Openbook
+    + 778: Haier A60-440256080BD (actually an ECS mobo)
+    + 779: Lenovo S12
+    + 784: ECS P4M890T-M v2.0
+    + 794: Packard Bell Lima (ASUS MBP5VDZ-NVM)
+    + 801: Twinhead H12V (P4M900)
+    + 807: ModeSwitchMethod option
+    + 812: Guillemot-Hercules ECafe EC900B
+    + VX855 support
+    + Multiple panel autodetection issues
+  * Change my email address and drop DM-U-A field
+  * Bump standards-version, no change needed
+
+ -- Raphael Geissert <geissert@debian.org>  Mon, 23 Nov 2009 23:04:04 -0600
+
+xserver-xorg-video-openchrome (1:0.2.903+svn741-1) unstable; urgency=low
+
+  * New upstream snapshot
+    + 709: hwcursor improvements and bug fixes (Closes: #496922)
+    + 716: fix 2d initialization for P4M900
+    + 726: Fall back to software rendering for unsupported EXA repeat modes
+    + 734: Initialize CRTC before a mode switch
+    + 737: Samsung NC20
+    + 739: Fix 2D engine init
+    + 740: CX700 integrated TMDS
+    + 741: Foxconn P4M800P7MB-RS2H
+  * debian/copyright updated to add details about a new copyright holder
+  * debian/control: bump standards version, no change needed
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 29 Mar 2009 13:39:13 -0600
+
+xserver-xorg-video-openchrome (1:0.2.903+svn713-1) experimental; urgency=low
+
+  * New upstream snapshot
+    + 682-685: Initial VX800 chipsets support
+      + 708: Initial XVideo support
+    + 682: via_cursor.c: register corrections
+    + 686: Mitac 8624, but with a P4M890
+    + 687: VIA Epia M700
+    + 688: Hide overlay when video is invisible
+    + 690: Axper XP-M8VM800
+    + 693: Added more needed panel modes
+    + 694: XvMC Unichrome Pro allocation fixes (LP: #304119)
+    + 696: Fixed Crash worked around by XaaNoImageWriteRect (LP: #274340)
+    + 713: Twinhead M6
+  * vt_fix.patch: removed, different solution by upstream in r695
+  * disable_ARGB_cursor_VM800.patch: removed, no longer needed
+
+ -- Raphael Geissert <atomo64@gmail.com>  Fri, 09 Jan 2009 19:11:40 -0600
+
+xserver-xorg-video-openchrome (1:0.2.902+svn579-4) unstable; urgency=low
+
+  [ Raphael Geissert ]
+  * New upstream release + snapshot.
+    + 584: Simplified memory bandwidth setting.
+    + 591: IBM AnyPlace Kiosk 3xx.
+    + 592: Added missing 640x480 PAL mode for VT1625.
+    + 593-4: Merged randr branch.
+      + 595: Disabled ARGB cursor for K8M890.
+    + 597: VIA VT8454B has a panel.
+    + 598: MSI K8M Neo-V (broken pci id).
+  * disable_ARGB_cursor_VM800.patch: like r595 but for VM800.
+  * vt_fix.patch (Closes: #500253):
+    + prevent LCD's backlight from being switched off when changing VTs.
+  * debian/control:
+    + Build a dummy xserver-xorg-video-via package to ease the transition.
+    + Added lpia to the architectures list.
+
+  [ Julien Cristau ]
+  * Add DM-Upload-Allowed control field to let Raphael upload this package
+    himself.
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 19 Oct 2008 16:12:32 +0200
+
+xserver-xorg-video-openchrome (1:0.2.902+svn579-3) experimental; urgency=low
+
+  * Build against xserver 1.5.
+
+ -- Raphael Geissert <atomo64@gmail.com>  Wed, 17 Dec 2008 14:55:38 +0100
+
+xserver-xorg-video-openchrome (1:0.2.902+svn579-2) unstable; urgency=low
+
+  [ Raphael Geissert ]
+  * Cherry-picked the following changesets adding support for new cards:
+    + 580: MSI VR321
+    + 583: Foxconn P4M9007MB-8RS2H
+    + 586: MSI K9MM-V
+    + 589: Gigabyte M704 / RoverPC A700GQ
+    + 581: ECS CLE266
+
+ -- Julien Cristau <jcristau@debian.org>  Sun, 14 Sep 2008 17:52:58 +0200
+
+xserver-xorg-video-openchrome (1:0.2.902+svn579-1) unstable; urgency=low
+
+  [ Timo Aaltonen ]
+  * debian/patches/01_gen_pci_ids.diff:
+    - This patch adds a list of pci id's that the driver supports so that
+      the server can automatically load it. Stolen from via. (Closes: #487327)
+  * debian/control:
+    - Add quilt to build-deps.
+  * debian/rules:
+    - Support for patches.
+
+  [ Raphael Geissert ]
+  * New upstream snapshot.
+    + Fixes some Xv issues.
+    + Disables XvDMA for P4M890 and K8M890, as it is broken.
+    + Enables CLE video engine on VM800/CN700.
+  * Bump Standards-Version to 3.8.0
+    + Use filter instead of findstring for DEB_BUILD_OPTIONS parsing in d/rules
+  * Stripped enclosing chevrons from the unichrome link (Closes: #485957)
+    - p.d.o displays the link with or without them, and looks ugly
+  * Removed a useless lintian override
+  * Install a symlink to xserver-xorg-core's bugreport script
+
+ -- Julien Cristau <jcristau@debian.org>  Sat, 12 Jul 2008 21:29:00 +0200
+
+xserver-xorg-video-openchrome (1:0.2.902+svn570-1) unstable; urgency=low
+
+  * First upload to Debian (Closes: #464848)
+  * New upstream release + snapshot
+  * Updated copyright information
+  * Conflicts: libchromexvmc1, libchromexvmcpro1 so Replaces takes
+     effect
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sat, 19 Apr 2008 19:51:43 -0500
+
+xserver-xorg-video-openchrome (1:0.2.901+svn502-1) experimental; urgency=low
+
+  * New upstream release
+
+ -- Raphael Geissert <atomo64@gmail.com>  Mon, 14 Jan 2008 17:55:56 -0600
+
+xserver-xorg-video-openchrome (1:0.2.901+svn491-1) experimental; urgency=low
+
+  * New upstream release
+  * Merged binary packages (merged overrides/*, *.install, and added Provides)
+  * Added epoch because of ubuntu's epoch addition
+  * debian/rules: set the correct Provides of -video and Depends on -core
+    Code taken from xserver-xorg-video-via-0.2.2's debian/xsfbs/xsfbs.mk
+  * debian/{rules,control}: rewritten so cdbs is NOT used
+  * Bumped DH_COMPAT to 6
+  * debian/control: Added Vcs-* entries
+  * debian/control: Do not conflict with xserver-xorg-video-{via,unichrome}
+    The driver is for some time now called 'openchrome'
+
+ -- Raphael Geissert <atomo64@gmail.com>  Mon, 14 Jan 2008 17:12:00 -0600
+
+xserver-xorg-video-openchrome (0.2.900+svn470-1) experimental; urgency=low
+
+  * New upstream release
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sat, 22 Dec 2007 12:33:17 -0600
+
+xserver-xorg-video-openchrome (0.2.900+svn452-1) experimental; urgency=low
+
+  * New upstream release
+  * clean target now removes some autogen.sh generated files
+  * Updated to Standards-Version: 3.7.3, no change needed
+  * Removed non-standard architecture lpia from control
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 09 Dec 2007 20:28:46 -0600
+
+xserver-xorg-video-openchrome (0.2.900+svn447-1) experimental; urgency=low
+
+  * New upstream release
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 25 Nov 2007 20:31:08 -0600
+
+xserver-xorg-video-openchrome (0.2.900+svn423-1) experimental; urgency=low
+
+  * New upstream release
+
+ -- Raphael Geissert <atomo64@gmail.com>  Sun, 28 Oct 2007 19:51:44 -0600
+
+xserver-xorg-video-openchrome (0.2.6+svn357-0ubuntu3) gutsy; urgency=low
+
+  * Add lpia to all binary packages.
+
+ -- Mario Limonciello <superm1@ubuntu.com>  Thu, 06 Sep 2007 09:59:20 -0500
+
+xserver-xorg-video-openchrome (0.2.6+svn357-0ubuntu2) gutsy; urgency=low
+
+  * Only build for i386, amd64, lpia.  Hardware isn't available
+    on sparc, ppc, ia64, and FTBFS on these arch anyhow.
+
+ -- Mario Limonciello <superm1@ubuntu.com>  Thu, 06 Sep 2007 09:51:48 -0500
+
+xserver-xorg-video-openchrome (0.2.6+svn357-0ubuntu1) gutsy; urgency=low
+
+  * Initial Release.
+
+ -- Mario Limonciello <superm1@ubuntu.com>  Fri, 27 Jul 2007 17:57:42 -0500
