@@ -1,9 +1,3 @@
-xserver-xorg-video-openchrome packages are not based on openchrome release
-tarballs but on openchrome subversion repository.
-
-Refer to the README.VCS-source file for details on how to setup git and
-git svn to fetch from both git.debian.org and svn.openchrome.org
-
 ------------------------------------------------------
 Quick Guide To Patching This Package For The Impatient
 ------------------------------------------------------

@@ -35,7 +35,6 @@
 
 #include <X11/Xarch.h>
 #include "xaalocal.h"
-#include "xaarop.h"
 #include "miline.h"
 
 #include "via.h"
@@ -43,14 +42,7 @@
 #include "via_regs.h"
 #include "via_id.h"
 #include "via_dmabuffer.h"
-
-#ifdef X_HAVE_XAAGETROP
-#define VIAACCELPATTERNROP(vRop) (XAAGetPatternROP(vRop) << 24)
-#define VIAACCELCOPYROP(vRop) (XAAGetCopyROP(vRop) << 24)
-#else
-#define VIAACCELPATTERNROP(vRop) (XAAPatternROP[vRop] << 24)
-#define VIAACCELCOPYROP(vRop) (XAACopyROP[vRop] << 24)
-#endif
+#include "via_rop.h"
 
 enum VIA_2D_Regs {
 	GECMD,
@@ -602,7 +594,7 @@ viaDisableClipping(ScrnInfoPtr pScrn)
 
 /*
  * This is a small helper to wrap around a PITCH register write
- * to deal with the sublte differences of M1 and old 2D engine
+ * to deal with the subtle differences of M1 and old 2D engine
  */
 static void
 viaPitchHelper(VIAPtr pVia, unsigned dstPitch, unsigned srcPitch)
@@ -1252,7 +1244,9 @@ viaInitXAA(ScreenPtr pScreen)
                              HARDWARE_CLIP_COLOR_8x8_FILL |
                              HARDWARE_CLIP_SCREEN_TO_SCREEN_COLOR_EXPAND | 0);
 
-    if (pVia->Chipset != VIA_VX855 && pVia->Chipset != VIA_VX900)
+    if (pVia->Chipset != VIA_VX800 &&
+        pVia->Chipset != VIA_VX855 && 
+        pVia->Chipset != VIA_VX900)
     	xaaptr->ClippingFlags |= (HARDWARE_CLIP_SOLID_FILL |
                                   HARDWARE_CLIP_SOLID_LINE |
                                   HARDWARE_CLIP_DASHED_LINE);
@@ -2199,6 +2193,13 @@ viaExaPrepareComposite(int op, PicturePtr pSrcPicture,
     ViaTexBlendingModes srcMode;
     Bool isAGP;
     unsigned long offset;
+
+    /* Workaround: EXA crash with new libcairo2 on a VIA VX800 (#298) */
+    /* TODO Add real source only pictures */
+    if (!pSrc) { 
+ 	    ErrorF("pSrc is NULL\n"); 
+ 	    return FALSE; 
+ 	} 
 
     v3d->setDestination(v3d, exaGetPixmapOffset(pDst),
                         exaGetPixmapPitch(pDst), pDstPicture->format);

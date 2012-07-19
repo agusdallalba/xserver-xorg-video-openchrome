@@ -39,7 +39,7 @@
 #include <X11/extensions/dpms.h>
 #endif
 
-#include "svnversion.h"
+#include "version.h"
 
 #include "via_driver.h"
 #include "via_video.h"
@@ -682,7 +682,8 @@ VIASetupDefaultOptions(ScrnInfoPtr pScrn)
 
     pVia->shadowFB = FALSE;
     pVia->NoAccel = FALSE;
-    pVia->noComposite = FALSE;
+    pVia->noComposite = TRUE;
+    pVia->useEXA = TRUE;
     pVia->exaScratchSize = VIA_SCRATCH_SIZE / 1024;
     pVia->hwcursor = TRUE;
     pVia->VQEnable = TRUE;
@@ -1081,6 +1082,16 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
             }
     }
 
+    /*
+     * PCI BAR are limited to 256 MB.
+     * This limitation will go away with TTM.
+     */
+    if (pScrn->videoRam > (256 << 10)) {
+        xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+                   "Cannot use more than 256 MB of VRAM.\n");
+        pScrn->videoRam = (256 << 10);
+    }
+
     if (from == X_PROBED) {
         xf86DrvMsg(pScrn->scrnIndex, from,
                    "Probed amount of VideoRAM = %d kB\n", pScrn->videoRam);
@@ -1205,12 +1216,12 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
     if (!pVia->NoAccel) {
         from = X_DEFAULT;
         if ((s = (char *)xf86GetOptValString(VIAOptions, OPTION_ACCELMETHOD))) {
-            if (!xf86NameCmp(s, "XAA")) {
-                from = X_CONFIG;
-                pVia->useEXA = FALSE;
-            } else if (!xf86NameCmp(s, "EXA")) {
+            if (!xf86NameCmp(s, "EXA")) {
                 from = X_CONFIG;
                 pVia->useEXA = TRUE;
+            } else if (!xf86NameCmp(s, "XAA")) {
+                from = X_CONFIG;
+                pVia->useEXA = FALSE;
             }
         }
         xf86DrvMsg(pScrn->scrnIndex, from,
@@ -1799,10 +1810,11 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
                 VIAFreeRec(pScrn);
                 return FALSE;
             }
-        }
-        if (!xf86LoadSubModule(pScrn, "xaa")) {
-            VIAFreeRec(pScrn);
-            return FALSE;
+        } else {
+            if (!xf86LoadSubModule(pScrn, "xaa")) {
+                VIAFreeRec(pScrn);
+                return FALSE;
+            }
         }
     }
 

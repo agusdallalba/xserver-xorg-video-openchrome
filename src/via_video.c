@@ -117,6 +117,10 @@ static int viaSetPortAttribute(ScrnInfoPtr, Atom, INT32, pointer);
 static int viaPutImage(ScrnInfoPtr, short, short, short, short, short, short,
     short, short, int, unsigned char *, short, short, Bool,
     RegionPtr, pointer, DrawablePtr);
+static void UVBlit(unsigned char *dest,
+    const unsigned char *uBuffer,
+    const unsigned char *vBuffer,
+    unsigned width, unsigned srcPitch, unsigned dstPitch, unsigned lines);
 static void nv12Blit(unsigned char *nv12Chroma,
     const unsigned char *uBuffer,
     const unsigned char *vBuffer,
@@ -158,11 +162,12 @@ static XF86AttributeRec AttributesG[NUM_ATTRIBUTES_G] = {
     {XvSettable | XvGettable, 0, 1, "XV_AUTOPAINT_COLORKEY"}
 };
 
-#define NUM_IMAGES_G 6
+#define NUM_IMAGES_G 7
 
 static XF86ImageRec ImagesG[NUM_IMAGES_G] = {
     XVIMAGE_YUY2,
     XVIMAGE_YV12,
+    XVIMAGE_I420,
     {
         /*
          * Below, a dummy picture type that is used in XvPutImage only to do
@@ -278,11 +283,12 @@ DecideOverlaySupport(ScrnInfoPtr pScrn)
     if (pVia->ChipId != PCI_CHIP_VT3205 &&
         pVia->ChipId != PCI_CHIP_VT3204 &&
         pVia->ChipId != PCI_CHIP_VT3259 &&
-        pVia->ChipId != PCI_CHIP_VT3314 && 
-        pVia->ChipId != PCI_CHIP_VT3327 && 
-        pVia->ChipId != PCI_CHIP_VT3336 && 
-        pVia->ChipId != PCI_CHIP_VT3409 && 
-        pVia->ChipId != PCI_CHIP_VT3364 && 
+        pVia->ChipId != PCI_CHIP_VT3314 &&
+        pVia->ChipId != PCI_CHIP_VT3327 &&
+        pVia->ChipId != PCI_CHIP_VT3336 &&
+        pVia->ChipId != PCI_CHIP_VT3409 &&
+        pVia->ChipId != PCI_CHIP_VT3410 &&
+        pVia->ChipId != PCI_CHIP_VT3364 &&
         pVia->ChipId != PCI_CHIP_VT3324 &&
 	pVia->ChipId != PCI_CHIP_VT3353) {
         CARD32 bandwidth = (mode->HDisplay >> 4) * (mode->VDisplay >> 5) *
@@ -536,9 +542,25 @@ viaRestoreVideo(ScrnInfoPtr pScrn)
         viaVidEng->video1y_addr0   = localVidEng->video1y_addr0;
         viaVidEng->video1_fifo     = localVidEng->video1_fifo;
         viaVidEng->video1y_addr3   = localVidEng->video1y_addr3;
-        viaVidEng->v1_source_w_h   = localVidEng->v1_source_w_h ;
+        viaVidEng->v1_source_w_h   = localVidEng->v1_source_w_h;
         viaVidEng->video1_CSC1     = localVidEng->video1_CSC1;
         viaVidEng->video1_CSC2     = localVidEng->video1_CSC2;
+
+        /* Fix cursor garbage after suspend for VX855 and VX900 (#405) */
+        /* 0x2E4 T Signature Data Result 1 */
+        viaVidEng->video1u_addr1         = localVidEng->video1u_addr1; 
+        /* 0x2E8 HI for Primary Display FIFO Control Signal */
+        viaVidEng->video1u_addr2         = localVidEng->video1u_addr2;
+        /* 0x2EC HI for Primary Display FIFO Transparent color */
+        viaVidEng->video1u_addr3         = localVidEng->video1u_addr3;
+        /* 0x2F0 HI for Primary Display Control Signal */
+        viaVidEng->video1v_addr0         = localVidEng->video1v_addr0;
+        /* 0x2F4 HI for Primary Display Frame Buffer Starting Address */
+        viaVidEng->video1v_addr1         = localVidEng->video1v_addr1;
+        /* 0x2F8 HI for Primary Display Horizontal and Vertical Start */
+        viaVidEng->video1v_addr2         = localVidEng->video1v_addr2;
+        /* 0x2FC HI for Primary Display Center Offset */
+        viaVidEng->video1v_addr3         = localVidEng->video1v_addr3;
     }
     viaVidEng->snd_color_key   = localVidEng->snd_color_key;
     viaVidEng->v3alpha_prefifo = localVidEng->v3alpha_prefifo;
@@ -559,10 +581,11 @@ viaRestoreVideo(ScrnInfoPtr pScrn)
     viaVidEng->video3_CSC2     = localVidEng->video3_CSC2;    
     viaVidEng->compose         = localVidEng->compose;
     
-    viaVidEng->video1_ctl = pVia->dwV1;
     viaVidEng->video3_ctl = pVia->dwV3;
-    if (pVia->ChipId != PCI_CHIP_VT3314)
+    if (pVia->ChipId != PCI_CHIP_VT3314) {
+        viaVidEng->video1_ctl = pVia->dwV1;
         viaVidEng->compose = V1_COMMAND_FIRE;
+    }
     viaVidEng->compose = V3_COMMAND_FIRE;
 }
 
@@ -638,6 +661,7 @@ viaInitVideo(ScreenPtr pScreen)
         (pVia->Chipset == VIA_CX700) ||
         (pVia->Chipset == VIA_VX800) ||
         (pVia->Chipset == VIA_VX855) ||
+        (pVia->Chipset == VIA_VX900) ||
         (pVia->Chipset == VIA_P4M890));
     if ((pVia->drmVerMajor < 2) ||
         ((pVia->drmVerMajor == 2) && (pVia->drmVerMinor < 9)))
@@ -656,8 +680,8 @@ viaInitVideo(ScreenPtr pScreen)
         (pVia->Chipset == VIA_K8M800) || (pVia->Chipset == VIA_PM800) ||
         (pVia->Chipset == VIA_VM800) || (pVia->Chipset == VIA_K8M890) ||
         (pVia->Chipset == VIA_P4M900) || (pVia->Chipset == VIA_CX700) ||
-        (pVia->Chipset == VIA_P4M890) || (pVia->Chipset == VIA_VX800) || 
-        (pVia->Chipset == VIA_VX855)) {
+        (pVia->Chipset == VIA_P4M890) || (pVia->Chipset == VIA_VX800) ||
+        (pVia->Chipset == VIA_VX855) || (pVia->Chipset == VIA_VX900)) {
         num_new = viaSetupAdaptors(pScreen, &newAdaptors);
         num_adaptors = xf86XVListGenericAdaptors(pScrn, &adaptors);
     } else {
@@ -692,72 +716,6 @@ viaInitVideo(ScreenPtr pScreen)
         pVia->swov.oldPanningX = 0;
         pVia->swov.oldPanningY = 0;
     }
-}
-
-
-/*
- * This one gets called, for example, on panning.
- */
-
-static int
-viaReputImage(ScrnInfoPtr pScrn,
-        short drw_x, short drw_y, RegionPtr clipBoxes, pointer data,
-        DrawablePtr pDraw)
-{
-
-    DDUPDATEOVERLAY UpdateOverlay_Video;
-    LPDDUPDATEOVERLAY lpUpdateOverlay = &UpdateOverlay_Video;
-    viaPortPrivPtr pPriv = (viaPortPrivPtr) data;
-    VIAPtr pVia = VIAPTR(pScrn);
-
-    if (!REGION_EQUAL(pScrn->pScreen, &pPriv->clip, clipBoxes)) {
-        REGION_COPY(pScrn->pScreen, &pPriv->clip, clipBoxes);
-        if (pPriv->autoPaint) {
-            if (pDraw->type == DRAWABLE_WINDOW) {
-                /* TODO Replace xf86XVFillKeyHelper with xf86XVFillKeyHelperDrawable
-                   Currently resizing problem exist in VLC Media Player
-                   Example of implementation:
-                xf86XVFillKeyHelperDrawable(pDraw, pPriv->colorKey, clipBoxes);
-                DamageDamageRegion(pDraw, clipBoxes); */
-                
-                xf86XVFillKeyHelper(pScrn->pScreen, pPriv->colorKey, clipBoxes);
-            } else {
-                xf86XVFillKeyHelper(pScrn->pScreen, pPriv->colorKey, clipBoxes);
-            }
-        }
-    }
-
-    if (drw_x == pPriv->old_drw_x &&
-        drw_y == pPriv->old_drw_y &&
-        pVia->swov.oldPanningX == pVia->swov.panning_x &&
-        pVia->swov.oldPanningY == pVia->swov.panning_y) {
-        viaXvError(pScrn, pPriv, xve_none);
-        return Success;
-    }
-
-    lpUpdateOverlay->SrcLeft = pPriv->old_src_x;
-    lpUpdateOverlay->SrcTop = pPriv->old_src_y;
-    lpUpdateOverlay->SrcRight = pPriv->old_src_x + pPriv->old_src_w;
-    lpUpdateOverlay->SrcBottom = pPriv->old_src_y + pPriv->old_src_h;
-
-    lpUpdateOverlay->DstLeft = drw_x;
-    lpUpdateOverlay->DstTop = drw_y;
-    lpUpdateOverlay->DstRight = drw_x + pPriv->old_drw_w;
-    lpUpdateOverlay->DstBottom = drw_y + pPriv->old_drw_h;
-    pPriv->old_drw_x = drw_x;
-    pPriv->old_drw_y = drw_y;
-
-    lpUpdateOverlay->dwFlags = DDOVER_KEYDEST;
-
-    if (pScrn->bitsPerPixel == 8)
-        lpUpdateOverlay->dwColorSpaceLowValue = pPriv->colorKey & 0xff;
-    else
-        lpUpdateOverlay->dwColorSpaceLowValue = pPriv->colorKey;
-
-    VIAVidUpdateOverlay(pScrn, lpUpdateOverlay);
-
-    viaXvError(pScrn, pPriv, xve_none);
-    return Success;
 }
 
 static unsigned
@@ -820,7 +778,7 @@ viaSetupAdaptors(ScreenPtr pScreen, XF86VideoAdaptorPtr ** adaptors)
         viaAdaptPtr[i]->GetPortAttribute = viaGetPortAttribute;
         viaAdaptPtr[i]->SetPortAttribute = viaSetPortAttribute;
         viaAdaptPtr[i]->PutImage = viaPutImage;
-        viaAdaptPtr[i]->ReputImage = viaReputImage;
+        viaAdaptPtr[i]->ReputImage = NULL;
         viaAdaptPtr[i]->QueryImageAttributes = viaQueryImageAttributes;
         for (j = 0; j < numPorts; ++j) {
             viaPortPriv[j].dmaBounceBuffer = NULL;
@@ -1029,6 +987,7 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
                 proReg) & ~HQV_FLIP_ODD) | HQV_SW_FLIP | HQV_FLIP_STATUS);
             break;
         case FOURCC_YV12:
+        case FOURCC_I420:
         default:
             while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP)
                     && --count);
@@ -1055,16 +1014,49 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
  */
 
 static void
-nv12cp(unsigned char *dst,
-    const unsigned char *src, int dstPitch, int w, int h, int yuv422)
+planar420cp(unsigned char *dst,
+    const unsigned char *src, int dstPitch, int w, int h, int i420)
 {
     /* 
      * Blit luma component as a fake YUY2 assembler blit. 
      */
+	unsigned long srcUOffset, srcVOffset;
+    if (i420) {
+	    srcVOffset  = w * h + (w >> 1) * (h >> 1);
+	    srcUOffset = w * h;
+    } else {
+	    srcUOffset  = w * h + (w >> 1) * (h >> 1);
+	    srcVOffset = w * h;
+	}
+
+    (*viaFastVidCpy) (dst, src, dstPitch, w >> 1, h, 1);
+    UVBlit(dst + dstPitch * h, src + srcUOffset,
+           src + srcVOffset, w >> 1, w >> 1, dstPitch, h >> 1);
+}
+
+/*
+ * Slow and dirty. NV12 blit.
+ */
+
+static void
+nv12cp(unsigned char *dst,
+    const unsigned char *src, int dstPitch, int w, int h, int i420)
+{
+    /* 
+     * Blit luma component as a fake YUY2 assembler blit. 
+     */
+	unsigned long srcUOffset, srcVOffset;
+    if (i420) {
+	    srcVOffset  = w * h + (w >> 1) * (h >> 1);
+	    srcUOffset = w * h;
+    } else {
+	    srcUOffset  = w * h + (w >> 1) * (h >> 1);
+	    srcVOffset = w * h;
+	}
 
     (*viaFastVidCpy) (dst, src, dstPitch, w >> 1, h, TRUE);
-    nv12Blit(dst + dstPitch * h, src + w * h + (w >> 1) * (h >> 1),
-            src + w * h, w >> 1, w >> 1, dstPitch, h >> 1);
+    nv12Blit(dst + dstPitch * h, src + srcUOffset,
+            src + srcVOffset, w >> 1, w >>1, dstPitch, h >> 1);
 }
 
 #ifdef XF86DRI
@@ -1089,7 +1081,7 @@ viaDmaBlitImage(VIAPtr pVia,
 
     bounceBuffer = ((unsigned long)src & 15);
     nv12Conversion = (pVia->VideoEngine == VIDEO_ENGINE_CME && 
-        id == FOURCC_YV12);
+        (id == FOURCC_YV12 || id == FOURCC_I420));
 
     switch (id) {
         case FOURCC_YUY2:
@@ -1104,6 +1096,7 @@ viaDmaBlitImage(VIAPtr pVia,
             break;
 
         case FOURCC_YV12:
+        case FOURCC_I420:
         default:
             bounceStride = ALIGN_TO(width, 16);
             bounceLines = height;
@@ -1119,7 +1112,7 @@ viaDmaBlitImage(VIAPtr pVia,
                 pPort->dmaBounceBuffer = 0;
             }
             size = bounceStride * bounceLines + 16;
-            if (FOURCC_YV12 == id)
+            if (id == FOURCC_YV12 || id == FOURCC_I420)
                 size += ALIGN_TO(bounceStride >> 1, 16) * bounceLines;
             pPort->dmaBounceBuffer = (unsigned char *)malloc(size);
             pPort->dmaBounceLines = bounceLines;
@@ -1159,7 +1152,7 @@ viaDmaBlitImage(VIAPtr pVia,
 
     lumaSync = blit.sync;
 
-    if (id == FOURCC_YV12) {
+    if (id == FOURCC_YV12 || id == FOURCC_I420) {
         unsigned tmp = ALIGN_TO(width >> 1, 16);
 
         if (nv12Conversion) {
@@ -1291,6 +1284,17 @@ viaPutImage(ScrnInfoPtr pScrn,
 #endif
                 } else {
                     switch (id) {
+                        case FOURCC_I420:
+                            if (pVia->VideoEngine == VIDEO_ENGINE_CME) {
+                                nv12cp(pVia->swov.SWDevice.
+                                    lpSWOverlaySurface[pVia->dwFrameNum & 1],
+                                    buf, dstPitch, width, height, 1);
+                            } else {
+                                (*viaFastVidCpy)(pVia->swov.SWDevice.
+                                    lpSWOverlaySurface[pVia->dwFrameNum & 1],
+                                    buf, dstPitch, width, height, 0);
+                            }
+                            break;
                         case FOURCC_YV12:
                             if (pVia->VideoEngine == VIDEO_ENGINE_CME) {
                                 nv12cp(pVia->swov.SWDevice.
@@ -1456,6 +1460,7 @@ viaQueryImageAttributes(ScrnInfoPtr pScrn,
         offsets[0] = 0;
 
     switch (id) {
+        case FOURCC_I420:
         case FOURCC_YV12: /*Planar format : YV12 -4:2:0 */
             *h = (*h + 1) & ~1;
             size = *w;
@@ -1540,6 +1545,35 @@ VIAVidAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
     pVia->swov.panning_x = x;
     pVia->swov.panning_y = y;
 }
+
+/*
+ * Blit the U and V Fields. Used to Flip the U V for I420.
+ */
+
+static void
+UVBlit(unsigned char *dst,
+        const unsigned char *uBuffer,
+        const unsigned char *vBuffer,
+        unsigned width, unsigned srcPitch, unsigned dstPitch, unsigned lines)
+{
+    int i, j;
+
+    dstPitch >>= 1;
+
+    for(j = 0; j < lines; j++)
+    {
+        for(i = 0; i < width; i++)
+        {
+            dst[i] = (uBuffer[i] << 8) | (vBuffer[i] << 16);
+        }
+
+        dst += dstPitch;
+        uBuffer += srcPitch;
+        vBuffer += srcPitch;
+    }
+
+}
+
 
 /*
  * Blit the chroma field from one buffer to another while at the same time converting from

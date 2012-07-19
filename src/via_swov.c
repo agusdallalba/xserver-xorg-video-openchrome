@@ -335,6 +335,7 @@ VIAVidHWDiffInit(ScrnInfoPtr pScrn)
             HWDiff->HQVCmeRegs = hqv_cme_regs;
             break;
         case VIA_VX855:
+        case VIA_VX900:
             HWDiff->dwThreeHQVBuffer = VID_HWDIFF_TRUE;
             HWDiff->dwHQVFetchByteUnit = VID_HWDIFF_TRUE;
             HWDiff->dwSupportTwoColorKey = VID_HWDIFF_TRUE;
@@ -392,6 +393,7 @@ viaOverlayGetV1V3Format(VIAPtr pVia, int vport, /* 1 or 3, as in V1 or V3 */
     if (videoFlag & VIDEO_HQV_INUSE) {
         switch (pVia->swov.SrcFourCC) {
             case FOURCC_YV12:
+            case FOURCC_I420:
             case FOURCC_XVMC:
                 *pHQVCtl |= HQV_YUV420;
                 break;
@@ -421,6 +423,7 @@ viaOverlayGetV1V3Format(VIAPtr pVia, int vport, /* 1 or 3, as in V1 or V3 */
     } else {
         switch (pVia->swov.SrcFourCC) {
             case FOURCC_YV12:
+            case FOURCC_I420:
             case FOURCC_XVMC:
                 if (vport == 1) {
                     *pVidCtl |= V1_YCbCr420;
@@ -503,6 +506,7 @@ viaOverlayGetSrcStartAddress(VIAPtr pVia,
                 break;
 
             case FOURCC_YV12:
+            case FOURCC_I420:
             case FOURCC_XVMC:
 
                 if (videoFlag & VIDEO_HQV_INUSE)
@@ -763,6 +767,7 @@ viaOverlayGetFetch(VIAPtr pVia, unsigned long videoFlag,
 
     switch (pVia->swov.SrcFourCC) {
         case FOURCC_YV12:
+        case FOURCC_I420:
         case FOURCC_XVMC:
             n = 0; /* 2^n = 1 byte per pixel (Y channel in planar YUV) */
             break;
@@ -885,6 +890,7 @@ viaCalculateVideoColor(VIAPtr pVia, int hue, int saturation,
         case PCI_CHIP_VT3327:
         case PCI_CHIP_VT3353:
         case PCI_CHIP_VT3409:
+        case PCI_CHIP_VT3410:
             model = 0;
             break;
         case PCI_CHIP_CLE3122:
@@ -1024,6 +1030,7 @@ viaSetColorSpace(VIAPtr pVia, int hue, int saturation, int brightness,
         case PCI_CHIP_VT3364:
         case PCI_CHIP_VT3353:
         case PCI_CHIP_VT3409:
+        case PCI_CHIP_VT3410:
         case PCI_CHIP_CLE3122:
             VIDOutD(V1_ColorSpaceReg_2, col2);
             VIDOutD(V1_ColorSpaceReg_1, col1);
@@ -1054,6 +1061,7 @@ ViaInitVideoStatusFlag(VIAPtr pVia)
         case PCI_CHIP_VT3364:
         case PCI_CHIP_VT3353:
         case PCI_CHIP_VT3409:
+        case PCI_CHIP_VT3410:
             return (VIDEO_HQV_INUSE | SW_USE_HQV | VIDEO_1_INUSE
                     | VIDEO_ACTIVE | VIDEO_SHOW);
         case PCI_CHIP_CLE3122:
@@ -1094,6 +1102,7 @@ ViaSetVidCtl(VIAPtr pVia, unsigned int videoFlag)
             case PCI_CHIP_VT3353:
                 return V3_ENABLE | VIDEO_EXPIRE_NUM_VT3336;
             case PCI_CHIP_VT3409:
+            case PCI_CHIP_VT3410:
                 return V3_ENABLE | VIDEO_EXPIRE_NUM_VT3409;
             case PCI_CHIP_CLE3122:
                 if (CLE266_REV_IS_CX(pVia->ChipRev))
@@ -1146,7 +1155,8 @@ AddHQVSurface(ScrnInfoPtr pScrn, unsigned int numbuf, CARD32 fourcc)
         !(pVia->swov.gdwVideoFlagSW & VIDEO_1_INUSE))
         proReg = PRO_HQV1_OFFSET;
 
-    isplanar = ((fourcc == FOURCC_YV12) || (fourcc == FOURCC_XVMC));
+    isplanar = ((fourcc == FOURCC_YV12) || (fourcc == FOURCC_I420) ||
+				(fourcc == FOURCC_XVMC));
 
     width = pVia->swov.SWDevice.gdwSWSrcWidth;
     height = pVia->swov.SWDevice.gdwSWSrcHeight;
@@ -1189,6 +1199,7 @@ CreateSurface(ScrnInfoPtr pScrn, CARD32 FourCC, CARD16 Width,
     isplanar = FALSE;
     switch (FourCC) {
         case FOURCC_YV12:
+        case FOURCC_I420:
         case FOURCC_XVMC:
             isplanar = TRUE;
             pitch = ALIGN_TO(Width, 32);
@@ -1281,9 +1292,10 @@ ViaSwovSurfaceCreate(ScrnInfoPtr pScrn, viaPortPrivPtr pPriv,
             break;
 
         case FOURCC_YV12:
+        case FOURCC_I420:
             retCode = CreateSurface(pScrn, FourCC, Width, Height, TRUE);
             if (retCode == Success)
-                retCode = AddHQVSurface(pScrn, numbuf, FOURCC_YV12);
+                retCode = AddHQVSurface(pScrn, numbuf, FourCC);
             break;
 
         case FOURCC_XVMC:
@@ -1345,6 +1357,7 @@ ViaSwovSurfaceDestroy(ScrnInfoPtr pScrn, viaPortPrivPtr pPriv)
                 break;
 
             case FOURCC_YV12:
+            case FOURCC_I420:
                 VIAFreeLinear(&pVia->swov.SWfbMem);
             case FOURCC_XVMC:
                 pVia->swov.SrcFourCC = 0;
@@ -1380,6 +1393,7 @@ SetFIFO_V3(VIAPtr pVia, CARD8 depth, CARD8 prethreshold, CARD8 threshold)
         case PCI_CHIP_VT3327:
         case PCI_CHIP_VT3353:
         case PCI_CHIP_VT3409:
+        case PCI_CHIP_VT3410:
             SaveVideoRegister(pVia, ALPHA_V3_FIFO_CONTROL,
                               (VIDInD(ALPHA_V3_FIFO_CONTROL) & ALPHA_FIFO_MASK)
                                | ((depth - 1) & 0xff) | ((threshold & 0xff) << 8));
@@ -1445,6 +1459,7 @@ SetFIFO_V3_64or32or32(VIAPtr pVia)
         case PCI_CHIP_VT3364:
         case PCI_CHIP_VT3353:
         case PCI_CHIP_VT3409:
+        case PCI_CHIP_VT3410:
             SetFIFO_V3(pVia, 225, 200, 250);
             break;
         case PCI_CHIP_VT3204:
@@ -1478,6 +1493,7 @@ SetFIFO_V3_64or32or16(VIAPtr pVia)
         case PCI_CHIP_VT3364:
         case PCI_CHIP_VT3353:
         case PCI_CHIP_VT3409:
+        case PCI_CHIP_VT3410:
             SetFIFO_V3(pVia, 225, 200, 250);
             break;
         case PCI_CHIP_VT3204:
@@ -1509,6 +1525,7 @@ SetupFIFOs(VIAPtr pVia, unsigned long videoFlag,
 {
     if (miniCtl & V1_Y_INTERPOLY) {
         if (pVia->swov.SrcFourCC == FOURCC_YV12
+			|| pVia->swov.SrcFourCC == FOURCC_I420
             || pVia->swov.SrcFourCC == FOURCC_XVMC) {
             if (videoFlag & VIDEO_HQV_INUSE) {
                 if (videoFlag & VIDEO_1_INUSE)
@@ -1542,6 +1559,7 @@ SetupFIFOs(VIAPtr pVia, unsigned long videoFlag,
         }
     } else {
         if (pVia->swov.SrcFourCC == FOURCC_YV12
+			|| pVia->swov.SrcFourCC == FOURCC_I420
             || pVia->swov.SrcFourCC == FOURCC_XVMC) {
             if (videoFlag & VIDEO_HQV_INUSE) {
                 if (videoFlag & VIDEO_1_INUSE)
@@ -1660,7 +1678,7 @@ SetHQVFetch(VIAPtr pVia, CARD32 srcFetch, unsigned long srcHeight)
         srcFetch >>= 3;  /* fetch unit is 8 bytes */
     }
 
-    if (pVia->ChipId != PCI_CHIP_VT3409)
+    if ((pVia->ChipId != PCI_CHIP_VT3409) && (pVia->ChipId != PCI_CHIP_VT3410))
         SaveVideoRegister(pVia, HQV_SRC_FETCH_LINE + proReg,
                           ((srcFetch - 1) << 16) | (srcHeight - 1));
 }
@@ -1867,9 +1885,9 @@ Upd_Video(ScrnInfoPtr pScrn, unsigned long videoFlag,
      */
     if ((pVia->VideoEngine == VIDEO_ENGINE_CME
          || pVia->Chipset == VIA_VM800)
-        && pVia->pBIOSInfo->Panel->IsActive) {
+        &&  (pBIOSInfo->SecondCRTC->IsActive==TRUE)) {
 
-        /* V1_ON_SND_DISPLAY */
+        /* VAL_VIDEO_ON_SND_DISPLAY */
         vidCtl |= V1_ON_SND_DISPLAY;
         /* SECOND_DISPLAY_COLOR_KEY_ENABLE */
         compose |= SECOND_DISPLAY_COLOR_KEY_ENABLE | 0x1;
@@ -1891,6 +1909,7 @@ Upd_Video(ScrnInfoPtr pScrn, unsigned long videoFlag,
     pVia->swov.overlayRecordV1.dwOffset = dwOffset;
 
     if (pVia->swov.SrcFourCC == FOURCC_YV12
+		|| pVia->swov.SrcFourCC == FOURCC_I420
         || pVia->swov.SrcFourCC == FOURCC_XVMC) {
 
         YCBCRREC YCbCr;
@@ -1983,6 +2002,7 @@ Upd_Video(ScrnInfoPtr pScrn, unsigned long videoFlag,
             SetHQVFetch(pVia, hqvSrcFetch, oriSrcHeight);
 
         if (pVia->swov.SrcFourCC == FOURCC_YV12
+            || pVia->swov.SrcFourCC == FOURCC_I420
             || pVia->swov.SrcFourCC == FOURCC_XVMC) {
             if (videoFlag & VIDEO_1_INUSE)
                 SaveVideoRegister(pVia, V1_STRIDE, srcPitch << 1);
@@ -2130,10 +2150,13 @@ Upd_Video(ScrnInfoPtr pScrn, unsigned long videoFlag,
     if (pVia->VideoEngine == VIDEO_ENGINE_CME) {
         SaveVideoRegister(pVia, HQV_CME_REG(hwDiff, HQV_SDO_CTRL1),0);
         SaveVideoRegister(pVia, HQV_CME_REG(hwDiff, HQV_SDO_CTRL3),((pUpdate->SrcRight - 1 ) << 16) | (pUpdate->SrcBottom - 1));
-        if (pVia->Chipset == VIA_VX800 || pVia->Chipset == VIA_VX855) {
+        if ((pVia->Chipset == VIA_VX800) || 
+            (pVia->Chipset == VIA_VX855) || 
+            (pVia->Chipset == VIA_VX900)) {
             SaveVideoRegister(pVia, HQV_CME_REG(hwDiff, HQV_SDO_CTRL2),0);
             SaveVideoRegister(pVia, HQV_CME_REG(hwDiff, HQV_SDO_CTRL4),((pUpdate->SrcRight - 1 ) << 16) | (pUpdate->SrcBottom - 1));
-            if (pVia->Chipset == VIA_VX855) {
+            if ((pVia->Chipset == VIA_VX855) ||
+                (pVia->Chipset == VIA_VX900)) {
                 SaveVideoRegister(pVia, HQV_DST_DATA_OFFSET_CTRL1,0);
                 SaveVideoRegister(pVia, HQV_DST_DATA_OFFSET_CTRL3,((pUpdate->SrcRight - 1 ) << 16) | (pUpdate->SrcBottom - 1));
                 SaveVideoRegister(pVia, HQV_DST_DATA_OFFSET_CTRL2,0);
@@ -2144,8 +2167,17 @@ Upd_Video(ScrnInfoPtr pScrn, unsigned long videoFlag,
                 SaveVideoRegister(pVia, HQV_SUBP_HSCALE_CTRL,0);
                 /*0x3e8*/
                 SaveVideoRegister(pVia, HQV_SUBP_VSCALE_CTRL,0);
-                SaveVideoRegister(pVia, HQV_DEFAULT_VIDEO_COLOR, HQV_FIX_COLOR);
             }
+
+            if (pVia->Chipset == VIA_VX900) {
+
+                SaveVideoRegister(pVia, HQV_SHARPNESS_DECODER_HANDSHAKE_CTRL_410, 0);        
+            }
+
+            // TODO Need to be tested on VX800
+            /* 0x3B8 */
+            SaveVideoRegister(pVia, HQV_DEFAULT_VIDEO_COLOR, HQV_FIX_COLOR);
+    
         }
     }
 
@@ -2292,6 +2324,7 @@ VIAVidUpdateOverlay(ScrnInfoPtr pScrn, LPDDUPDATEOVERLAY pUpdate)
         (pVia->swov.SrcFourCC == FOURCC_RV16) ||
         (pVia->swov.SrcFourCC == FOURCC_RV32) ||
         (pVia->swov.SrcFourCC == FOURCC_YV12) ||
+        (pVia->swov.SrcFourCC == FOURCC_I420) ||
         (pVia->swov.SrcFourCC == FOURCC_XVMC)) {
         videoFlag = pVia->swov.gdwVideoFlagSW;
     }
@@ -2366,6 +2399,7 @@ VIAVidUpdateOverlay(ScrnInfoPtr pScrn, LPDDUPDATEOVERLAY pUpdate)
         (pVia->swov.SrcFourCC == FOURCC_RV16) ||
         (pVia->swov.SrcFourCC == FOURCC_RV32) ||
         (pVia->swov.SrcFourCC == FOURCC_YV12) ||
+        (pVia->swov.SrcFourCC == FOURCC_I420) ||
         (pVia->swov.SrcFourCC == FOURCC_XVMC)) {
         pVia->swov.SWDevice.gdwSWDstLeft = pUpdate->DstLeft + panDX;
         pVia->swov.SWDevice.gdwSWDstTop = pUpdate->DstTop + panDY;
@@ -2425,6 +2459,7 @@ ViaOverlayHide(ScrnInfoPtr pScrn)
         (pVia->swov.SrcFourCC == FOURCC_RV16) ||
         (pVia->swov.SrcFourCC == FOURCC_RV32) ||
         (pVia->swov.SrcFourCC == FOURCC_YV12) ||
+        (pVia->swov.SrcFourCC == FOURCC_I420) ||
         (pVia->swov.SrcFourCC == FOURCC_XVMC))
         videoFlag = pVia->swov.gdwVideoFlagSW;
 
