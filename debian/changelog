@@ -6,7 +6,7 @@ xserver-xorg-video-openchrome (1:0.3.1-1) UNRELEASED; urgency=low
   * Remove README.VCS-source
 
   [ Timo Aaltonen ]
-  * New upstream release.
+  * New upstream release. (LP: #1041625)
   * Remove 10-Deal-with-xserver-1.12.diff, not needed anymore.
   * control: Bump policy to 3.9.3, no changes.
 
