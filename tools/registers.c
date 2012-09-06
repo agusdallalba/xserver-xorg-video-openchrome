@@ -518,7 +518,7 @@ struct io_reg sequencer_regs = {
 		[0x4b] = { "LDCK Clock Synthesizer Value 1", },
 		[0x4c] = { "LDCK Clock Synthesizer Value 2", },
 		[0x4d] = { "Preemptive Arbiter Control", },
-		[0x4e] = { "Software Reset Control", },
+		[0x4e] = { "Software Reset Control", seq_4e_desc, },
 		[0x4f] = { "CR Gating Clock Control", },
 		[0x50] = { "AGP Control", },
 		[0x51] = { "Display FIFO Control 1", },
@@ -1071,7 +1071,6 @@ static int parse_ioreg(u_int16_t *reg, u_int8_t *index, char *str)
 {
 	char *dot;
 	char buf[255];
-	unsigned long ul;
 
 	memset(buf, 0, sizeof(*buf));
 	strncpy(buf, str, sizeof(buf)-1);
