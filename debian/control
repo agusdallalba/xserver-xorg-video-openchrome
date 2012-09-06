@@ -24,7 +24,7 @@ Build-Depends:
  libxvmc-dev,
  quilt
 Build-Conflicts: autoconf2.13
-Standards-Version: 3.9.2
+Standards-Version: 3.9.3
 Homepage: http://www.openchrome.org
 Vcs-Git: git://git.debian.org/git/pkg-xorg/driver/xserver-xorg-video-openchrome
 Vcs-Browser: http://git.debian.org/?p=pkg-xorg/driver/xserver-xorg-video-openchrome.git
