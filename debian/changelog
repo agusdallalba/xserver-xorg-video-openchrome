@@ -7,6 +7,7 @@ xserver-xorg-video-openchrome (1:0.3.1-1) UNRELEASED; urgency=low
 
   [ Timo Aaltonen ]
   * New upstream release.
+  * Remove 10-Deal-with-xserver-1.12.diff, not needed anymore.
 
  -- Maarten Lankhorst <maarten.lankhorst@canonical.com>  Thu, 19 Jul 2012 10:41:21 +0200
 
