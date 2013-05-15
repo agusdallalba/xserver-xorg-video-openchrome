@@ -1,3 +1,9 @@
+xserver-xorg-video-openchrome (1:0.2.906-2+deb7u1) wheezy-security; urgency=high
+
+  * integer overflows calculating memory needs for replies [CVE-2013-1994]
+
+ -- Julien Cristau <jcristau@debian.org>  Wed, 15 May 2013 20:50:12 +0200
+
 xserver-xorg-video-openchrome (1:0.2.906-2) unstable; urgency=low
 
   * Fix FTBFS on kfreebsd with patch from Steven Chamberlain (closes: #677260)
