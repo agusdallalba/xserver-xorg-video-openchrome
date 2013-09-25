@@ -1,3 +1,430 @@
+commit 0c17f81ad43d42958ab3871c9b5c5e9cea402256
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Wed May 22 18:58:48 2013 +0200
+
+    Bump version to 0.3.3
+
+commit db309e3cd87a1279e8b592a692390755c528de4f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Apr 13 20:57:07 2013 -0700
+
+    integer overflow in uniDRIGetClientDriverName() in libchromeXvMC* [CVE-2013-1994 2/2]
+    
+    clientDriverNameLength is a CARD32 and needs to be bounds checked before
+    adding one to it to come up with the total size to allocate, to avoid
+    integer overflow leading to underallocation and writing data from the
+    network past the end of the allocated buffer.
+    
+    Reported-by: Ilja Van Sprundel <ivansprundel@ioactive.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 68bf50ce4903ec93da59cea78e063ed7c3882d3e
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Apr 13 20:49:43 2013 -0700
+
+    integer overflow in uniDRIOpenConnection() in libchromeXvMC* [CVE-2013-1994 1/2]
+    
+    busIdStringLength is a CARD32 and needs to be bounds checked before adding
+    one to it to come up with the total size to allocate, to avoid integer
+    overflow leading to underallocation and writing data from the network past
+    the end of the allocated buffer.
+    
+    Reported-by: Ilja Van Sprundel <ivansprundel@ioactive.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 50cef9490c6a128613c5b9f3f19ef2e803088983
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Tue May 21 21:24:41 2013 +0200
+
+    Probe TV encoder on all but the P4M900, unless we know the board has a TV encoder.
+    
+    Probing the TV encoder on the P4M900 chipset family when there is no such encoder is not safe. It is safe however on all other platforms.
+
+commit 79731f58281eb8782f8291a3d9375cb3f7691a13
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Wed May 22 10:47:25 2013 -0400
+
+    Our xorg driver has moved to using drm_fourcc.h but not all distros have a new enough libdrm so building can fail. We place a copy in our source tree to ensure building and this header doesn't change to often
+
+commit a013a7deabc63dd76d3ae635e05c9da4a5fc321b
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Mon May 20 18:13:24 2013 -0400
+
+    Patch from Krummenacher <max.krummenacher@toradex.com>
+    to fix via_lvds.c warning, char* compared to string literal
+    
+    gcc 4.7.2 issues a warning which make 'open suse build system' fail.
+    via_lvds.c: In function 'via_lvds_detect':
+    via_lvds.c:1305:26: warning: comparison with string literal results in unspecified behavior [-Waddress]
+
+commit cee0a1fab9cade87e6de16c67cd34c84cf697531
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sun May 19 17:18:39 2013 -0400
+
+    Fix the problems with UMS multiple screen handling. KMS still has problems
+
+commit 42d7ac70e3e9735619690a86482954827936d169
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sun May 19 15:13:28 2013 -0400
+
+    In our driver in order to support both KMS and UMS we can't call drmmode_set_mode_major directly but instead
+    call xf86CrtcSetMode or alike functions. All those xorg methods are wrappers around xf86CrtcSetModeTransform
+    which does the handling of restoring the mode in failure cases. If you look at drmmode_set_mode_major it also
+    does the the same error handling because the was copied from drivers that directly called it. Since this is
+    not the case for us we can make drmmode_set_mode_major much simpler and depend on xf86CrtcSetModeTransform to
+    handle failures for us.
+
+commit 541a3c1765e71af91e1319a3ab165ac37a0fd17d
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Wed Apr 24 19:38:02 2013 +0200
+
+    make iga[12]_crtc_mode_fixup more verbose when the mode is rejected.
+
+commit 3808a3b88e474f9549b06388c8bc323c4cb0b4b9
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sun Apr 21 10:19:24 2013 -0400
+
+    Integrate the different formats now supported by libdrm. This makes allocating buffers for KMS planes in the future much easier
+
+commit 186fe79c51e046b2732455eaa16500af32d7d077
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sun Apr 14 11:22:16 2013 -0400
+
+    drmmode_set_mode_major does this for us so no need to do it here
+
+commit 50b0f9186d33a2bd0be4bc55cd52e82e752e459f
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sun Apr 14 11:19:28 2013 -0400
+
+    Enable xorg driver to recieve hotplug events.
+
+commit 6812894a31146d08bd06db6f9085c2dbdc0be3db
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sun Apr 14 11:17:41 2013 -0400
+
+    via_xf86crtc_resize can handle both UMS and KMS modes so we can remove drmmode_xf86crtc_resize.
+
+commit 03c1b92d6b84af47fad90a2ade206a5c9a3b7e9a
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Wed Apr 3 23:25:38 2013 +0200
+
+    Biostar Viotech 3100+ (reported by J. Scott Heppler)
+
+commit 9bc4026a4069c1ab5b595315dac4a03d1b65129a
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Wed Mar 27 22:53:53 2013 +0100
+
+    bump version to 0.3.2
+
+commit 9355bc487e12aa7af2edd13dbfcaf9c8752ae954
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Wed Mar 20 20:26:19 2013 -0400
+
+    Rename GEM data structure in the fashion of other drm driver apis
+
+commit 17973712f083100cc041d50fca30e248846e5fd2
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Wed Mar 20 20:05:57 2013 -0400
+
+    miInitializeBackingStore no longer exist in xorg server 1.14. Removing causes no regression in earlier versions from my testing
+
+commit a925749eb21ba9e2e58845bc91554a09f20322ca
+Author: Pascal Ermster <bugs.freedesktop.org@hardfalcon.net>
+Date:   Mon Mar 4 19:53:51 2013 +0100
+
+    Change AM_CONFIG_HEADER to AC_CONFIG_HEADERS
+
+commit 396a209cd1988ece56d556d756c062b0120991d1
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Mon Feb 18 22:45:11 2013 +0100
+
+    Hardcode panel size for the XO
+
+commit c27f9fedd1ffb3462154dc309afdf10b5b6ff50d
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Tue Jan 29 22:43:05 2013 +0100
+
+    Add an explicit message for KMS support configure check
+
+commit bd13b49532479134eaecc47359e2056f0a48f680
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Mon Jan 28 23:17:30 2013 +0100
+
+    Revert CLE266 to legacy modeswitch
+
+commit 379a119cc4d1bb31060a8a1656b208324d60df00
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Mon Jan 21 20:37:32 2013 +0100
+
+    Fujitsu Futro A300 (reported by Alberto Asuero)
+
+commit 134cefa6eefb145deb37f1b428b854b96692c446
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Sun Jan 20 00:42:31 2013 +0100
+
+    When the card id is unknown, don't check CLE266 revision if the chipset is not CLE266
+
+commit 4d8e321dd715edcaf1e6df70ef29e52c552039a2
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sat Jan 12 20:00:50 2013 -0500
+
+    Allow via_output.c to build without C99 mode
+
+commit b466f471da4e274368adcd24b547cbe1a92ce1df
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sat Jan 12 16:19:25 2013 -0500
+
+    Support older X servers for RHEL5
+
+commit 53f034c70f6527eac87ea4a877b2170edaf12b13
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sat Jan 12 16:05:02 2013 -0500
+
+    Add Nec Powermate VL5 ViaCardId data to support this device
+
+commit 76515c8a369346d76864e55610a6a747d9b152d8
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sat Jan 12 16:02:12 2013 -0500
+
+    As the comment suggested in via_outputs.c probing the 3rd i2c bug locks up the P4M900. So we re-enable the via_card_id handling of what outputs to test for to get around this problem.
+
+commit 5a2d98863388413e6c6a2d971d1a68af5ca91173
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Thu Jan 3 22:02:25 2013 +0000
+
+    Fix a long standing issues of detecting the proper amount of VRAM on the P4M800 devices. We can tell it is a p4m800 versus a km400 by what pci bridge it has and reading the proper pic function
+
+commit 62a82ebfe8567e82af7ed900f7011fb683eced4f
+Author: Harry de Boer <harry@ijscoboer.nl>
+Date:   Mon Nov 26 22:36:23 2012 +0100
+
+    Return valid DisplayModePtr list for tv outputs. When creating a list of DisplayModePtr the ->next and ->prev pointers should point to the next/previous item in the list or only the first modeline will be recognised. This patch changes via_tv_get_modes to use the xf86ModesAdd and xf86DuplicateMode helpers to create correct modeline lists from a DisplayModeRec array.
+
+commit c290112cf808029dcf6e1e77b8b232dd7ab142b6
+Author: Harry de Boer <harry@ijscoboer.nl>
+Date:   Mon Nov 26 02:58:25 2012 +0100
+
+    Set possible_crtcs to allow tv outputs to be connected to crtcs.
+
+commit cebafd2ee9ba819518008561db34af0a2d1914c7
+Author: Harry de Boer <harry@ijscoboer.nl>
+Date:   Thu Nov 22 22:41:50 2012 +0100
+
+    VT1625 register count is 0x82
+
+commit 75f6cd75477110ef463f7d5b9f11a994b760e9d3
+Author: Harry de Boer <harry@ijscoboer.nl>
+Date:   Thu Nov 22 13:21:36 2012 +0100
+
+    Fix VT1625 output sensing. VT1625DACSenseI2C was using the same code as VT162xDACSenseI2C but the DAC sensing bit is in a different register for the VT1625. Also adds support for the VT1625S which has only four DACs.
+
+commit bae5f0923c8871feead875a67d3c55af9615f991
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Wed Jan 2 21:02:46 2013 +0100
+
+    typo
+
+commit 0db1c3c472c0c26ad3d3d951e5e3c05774b0f606
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Tue Dec 11 20:57:17 2012 +0100
+
+    Fix CN400 Xv on secondary
+
+commit fe5ef9748fe46c92db7a7ff91839b9dd582f6cea
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Mon Dec 3 18:56:30 2012 +0000
+
+    Doh, shouldn't code when sleepy. Free the TV i2c struct only we still have a pBIOSInfo struct left
+
+commit 84cf9bbfa3c8a192fe52ff2f378e421037e608bc
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Mon Dec 3 00:14:38 2012 +0100
+
+    Fix registers description
+
+commit 1b65992b08fc05866a2b8703e2198b80a1707094
+Author: Bartosz Kosiorek <gang65@poczta.onet.pl>
+Date:   Mon Dec 3 00:13:54 2012 +0100
+
+    Fix Xv bandwidth check when no vertical refresh is available
+
+commit 91ad6eac6362b74c24c626832697f097a7698aa8
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sun Dec 2 15:42:17 2012 -0500
+
+    Fix a double free when exiting the xorg server
+
+commit f721d029cc5b5ed5a558473622552c7ce802fef9
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sun Nov 25 13:20:30 2012 -0500
+
+    Do not support earlier libdrm versions that lack KMS support.
+
+commit f95c041fe69abc33e46977a0ee022ca77d1a279e
+Author: Bartosz Kosiorek <gang65@poczta.onet.pl>
+Date:   Thu Nov 15 13:51:33 2012 +0000
+
+    Fixes to reenable EXA composite support. Currently EXA crashes
+    due to accessing assuming we are attached to a Drawable which
+    might not be the case. This patch now has us test for a Drawable
+    and if not attached to one we don't do anything. Also the repeat
+    support check was completely wrong. The code currently attempts
+    to use repeat as a type instead of using it to test if repeat is
+    supported or not. The fix is to test if repeat is enabled and if
+    enabled test for the repeat type. With these fixes in place EXA
+    composite support is enabled by default.
+    
+    Signed-off-by: Bartosz Kosiorek <gang65@poczta.onet.pl>
+    Tested-by: Xavier Bachelot <xavier@bachelot.org>
+    Tested-by: James Simmons <jsimmons@infradead.org>
+
+commit e0c04ca1ff6e795f2144aeb0a8b5db305dbdc6f0
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Tue Nov 13 12:47:06 2012 +0000
+
+    Sometimes we fail to get a EDID from a VGA monitor but a real display is attached. In this case we look to see if a vblank is raised by the analog monitor and report it as detected
+
+commit 6f75bbc33684ab3c8e307df3cdac05edd429b0a9
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sat Nov 10 09:49:09 2012 -0500
+
+    XSERVER_LIBPCIACCESS is now decrepide but we need to handle older platforms (rhel5) so HAVE_PCIACCESS was created. This patch allows us to use libpciaccess 0.11 or better or work around the lack of libpciaccess.
+
+commit 14a0dede1f22b8f3ac295995d6093facc48fba58
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Fri Nov 9 18:39:53 2012 -0500
+
+    ViaDisplayInit called at startup broke VT switching. Instead I call ViaDisplayInit in VIARestore which allows CLE266 to work without legacy mode
+
+commit 803c882cf5fda7b677feb1962cffac9401b6688a
+Author: Bartosz Kosiorek <gang65@poczta.onet.pl>
+Date:   Thu Nov 1 22:02:08 2012 +0100
+
+    registers dumper improvements
+
+commit a9f13be7cfeefb4842f4ac378dc6f4eea3dd8ac2
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Thu Nov 1 21:20:07 2012 +0100
+
+    Fix indentation
+
+commit 7311799ea75e49001efdcca8d565aa76c7bf297c
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Thu Nov 1 21:16:17 2012 +0100
+
+    Change to new mailing list address
+
+commit e3685312c306c14d16dc399239a6bcd8ed0d7c86
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Mon Oct 8 22:15:26 2012 +0200
+
+    Fix typo
+
+commit dbed0fcbfa44f6433a4d87177d12c3a9fe73a40e
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Mon Oct 15 17:25:40 2012 -0400
+
+    Setup the basic IGA registers. This is needed to allow CLE266 to work in Non Legacy Modesetting.
+
+commit 602bb46bdba8f2986f224df204f7cd9ad426e15a
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Mon Oct 15 16:52:54 2012 -0400
+
+    The default timeouts for values for I2C are way to small for the defaults xorg server sets. We set them to the VESA DDC specs values instead.
+
+commit 58176cc66bbf69bd235d6baaca31f9f3011d065a
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Wed Oct 3 22:38:18 2012 +0200
+
+    Biostar Viotech 3200+
+
+commit ad861dca0e505ed175aba0d3432c4993f322b8bf
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Fri Sep 14 14:47:08 2012 +0100
+
+    When setting a new video mode we were assuming the offset into the frame buffer was 0,0 which is not always the case
+
+commit db2b898d7280a451b1655a9e758f3fc9c9269b2c
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Mon Sep 10 20:54:50 2012 +0200
+
+    Fix typo in registers description
+
+commit eee95bd967f452026bbd1379074c1ee0f83b2df3
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Tue Sep 4 22:43:37 2012 +0200
+
+    bump version to 0.3.1
+
+commit a8e7783856c1754e5c4a85045d7d536ceca40994
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Fri Aug 24 18:04:52 2012 +0200
+
+    Dell Optiplex FX130 (reported by Maciej Kazulak)
+
+commit 131175a7163a9189d70ed3118b45eaceb27898c0
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Sun Aug 5 11:10:27 2012 -0400
+
+    SCRN_INFO_PTR no longer works in new xorg servers when used from
+    inside the i2c layer. The work around is store the VGAHWPtr inside
+    the I2CBus DriverPrivate Union since the VGAHWPtr is what we really
+    want.
+
+commit 592fbd189bd0052b542eb6a351690042bcbee39e
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Mon Jul 30 21:05:23 2012 +0200
+
+    Remove --(enable|disable)-dri configure option, it depends on whether the X server was built with or w/o DRI support.
+
+commit f5c1627ff0cbac097173e509f96f62b6021397ca
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Mon Jul 30 21:03:42 2012 +0200
+
+    Lower libdrm requirement to 2.0
+
+commit b48ba7268e57bc65066d3a5b0d0e2d8f7a1c3999
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Mon Jul 23 23:35:31 2012 +0200
+
+    Simmtronics SIMM-PC VX900i (reported by Sagar Sawant)
+
+commit 1da9cf117cdc8ffb616da331a3e25f86ef40086a
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Fri Jul 20 23:50:46 2012 +0200
+
+    Tweak release date again
+
+commit fe33d114ec24465eeedcd35925586c65b8ef0af7
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Fri Jul 20 20:42:56 2012 +0200
+
+    Remove a couple unused variables
+
+commit ec885b6f4b8b19327c0e9834e4fb556eee691a3c
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Fri Jul 20 20:29:23 2012 +0200
+
+    Use bits description for Software Reset Control register
+
+commit 3b97a3f93388774f5dc38028e9939c04bd3b9f3d
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Fri Jul 20 12:17:01 2012 +0200
+
+    Install registers dumper tool in sbin rather than bin
+
+commit d2d898041e6c4bbc7c43d808d9a68b69afe2acc7
+Author: Xavier Bachelot <xavier@bachelot.org>
+Date:   Fri Jul 20 11:35:57 2012 +0200
+
+    Fix typo in bug tracker link
+
+commit 6a69631a66d1080a1305b15e25b1a581030acc28
+Author: James Simmons <jsimmons@infradead.org>
+Date:   Wed Jul 18 18:45:37 2012 -0400
+
+    Fixes for make distcheck to work
+
 commit 00e7b2f89669ce497c2284b80e7af562862b172f
 Author: Xavier Bachelot <xavier@bachelot.org>
 Date:   Wed Jul 18 00:22:30 2012 +0200

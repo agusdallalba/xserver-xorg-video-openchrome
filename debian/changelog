@@ -1,4 +1,4 @@
-xserver-xorg-video-openchrome (1:0.3.1-1) UNRELEASED; urgency=low
+xserver-xorg-video-openchrome (1:0.3.3-1) UNRELEASED; urgency=low
 
   [ Maarten Lankhorst ]
   * Move to git.
@@ -9,6 +9,9 @@ xserver-xorg-video-openchrome (1:0.3.1-1) UNRELEASED; urgency=low
   * New upstream release. (LP: #1041625)
   * Remove 10-Deal-with-xserver-1.12.diff, not needed anymore.
   * control: Bump policy to 3.9.3, no changes.
+
+  [ Maarten Lankhorst ]
+  * New upstream release.
 
  -- Maarten Lankhorst <maarten.lankhorst@canonical.com>  Thu, 19 Jul 2012 10:41:21 +0200
 
