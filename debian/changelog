@@ -4,6 +4,7 @@ xserver-xorg-video-openchrome (1:0.3.3-2) UNRELEASED; urgency=medium
     Uploaders.
   * control: Update homepage.
   * watch: Updated.
+  * add-missing-include.diff: Fix build against xserver 1.18.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Tue, 09 Feb 2016 16:21:41 +0200
 
