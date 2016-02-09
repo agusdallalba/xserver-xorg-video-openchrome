@@ -3,6 +3,7 @@ xserver-xorg-video-openchrome (1:0.3.3-2) UNRELEASED; urgency=medium
   * control: Drop Julien Viard de Galbert and Cyril Brulebois from
     Uploaders.
   * control: Update homepage.
+  * watch: Updated.
 
  -- Timo Aaltonen <tjaalton@debian.org>  Tue, 09 Feb 2016 16:21:41 +0200
 
