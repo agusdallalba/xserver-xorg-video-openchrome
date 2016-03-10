@@ -3,6 +3,7 @@ xserver-xorg-video-openchrome (1:0.3.3+git20160310-1) UNRELEASED; urgency=medium
   * New upstream snapshot (Closes: #814682)
   * rules: Enable parallel builds.
   * Install shared libs in multiarch libdir.
+  * rules: Add gentarball target
 
  -- Timo Aaltonen <tjaalton@debian.org>  Thu, 10 Mar 2016 15:34:35 +0200
 
