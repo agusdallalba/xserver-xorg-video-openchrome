@@ -1,5 +1,6 @@
 /*
- * Copyright 2005-2007 The Openchrome Project  [openchrome.org]
+ * Copyright 2005-2015 The Openchrome Project
+ *                     [http://www.freedesktop.org/wiki/Openchrome]
  * Copyright 2004-2006 Luc Verhaegen.
  * Copyright 2004-2005 The Unichrome Project  [unichrome.sf.net]
  * Copyright 1998-2003 VIA Technologies, Inc. All Rights Reserved.
@@ -41,6 +42,7 @@
 
 #include "version.h"
 #include "via_driver.h"
+#include "drm_fourcc.h"
 
 #if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
 #include "xf86RAC.h"
@@ -49,6 +51,8 @@
 
 #ifdef HAVE_DRI
 #include "dri.h"
+#else
+#include "drm_fourcc.h"
 #endif
 
 /* RandR support */
@@ -123,36 +127,36 @@ _X_EXPORT DriverRec VIA = {
 
 /* Supported chipsets */
 static SymTabRec VIAChipsets[] = {
-    {VIA_CLE266,   "CLE266"},
-    {VIA_KM400,    "KM400/KN400"},
-    {VIA_K8M800,   "K8M800/K8N800"},
-    {VIA_PM800,    "PM800/PM880/CN400"},
-    {VIA_VM800,    "VM800/P4M800Pro/VN800/CN700"},
-    {VIA_CX700,    "CX700/VX700"},
-    {VIA_K8M890,   "K8M890/K8N890"},
-    {VIA_P4M890,   "P4M890"},
-    {VIA_P4M900,   "P4M900/VN896/CN896"},
-    {VIA_VX800,    "VX800/VX820"},
-    {VIA_VX855,    "VX855/VX875"},
-    {VIA_VX900,    "VX900"},
-    {-1,            NULL }
+    {VIA_CLE266,        "CLE266"},
+    {VIA_KM400,         "KM400 / KM400A / KN400 / P4M800"},
+    {VIA_K8M800,        "K8M800 / K8N800"},
+    {VIA_PM800,         "PM800 / PN800 / PM880 / CN333 / CN400"},
+    {VIA_P4M800PRO,     "P4M800 Pro / VN800 / CN700"},
+    {VIA_CX700,         "CX700 / VX700"},
+    {VIA_P4M890,        "P4M890 / VN890 / CN800"},
+    {VIA_K8M890,        "K8M890 / K8N890"},
+    {VIA_P4M900,        "P4M900 / VN896 / CN896"},
+    {VIA_VX800,         "VX800 / VX820"},
+    {VIA_VX855,         "VX855 / VX875"},
+    {VIA_VX900,         "VX900"},
+    {-1,                NULL}
 };
 
 /* Mapping a PCI device ID to a chipset family identifier. */
 static PciChipsets VIAPciChipsets[] = {
-    {VIA_CLE266,   PCI_CHIP_CLE3122,   VIA_RES_SHARED},
-    {VIA_KM400,    PCI_CHIP_VT3205,    VIA_RES_SHARED},
-    {VIA_K8M800,   PCI_CHIP_VT3204,    VIA_RES_SHARED},
-    {VIA_PM800,    PCI_CHIP_VT3259,    VIA_RES_SHARED},
-    {VIA_VM800,    PCI_CHIP_VT3314,    VIA_RES_SHARED},
-    {VIA_CX700,    PCI_CHIP_VT3324,    VIA_RES_SHARED},
-    {VIA_K8M890,   PCI_CHIP_VT3336,    VIA_RES_SHARED},
-    {VIA_P4M890,   PCI_CHIP_VT3327,    VIA_RES_SHARED},
-    {VIA_P4M900,   PCI_CHIP_VT3364,    VIA_RES_SHARED},
-    {VIA_VX800,    PCI_CHIP_VT3353,    VIA_RES_SHARED},
-    {VIA_VX855,    PCI_CHIP_VT3409,    VIA_RES_SHARED},
-    {VIA_VX900,    PCI_CHIP_VT3410,    VIA_RES_SHARED},
-    {-1,           -1,                 VIA_RES_UNDEF}
+    {VIA_CLE266,        PCI_CHIP_CLE3122,   VIA_RES_SHARED},
+    {VIA_KM400,         PCI_CHIP_VT3205,    VIA_RES_SHARED},
+    {VIA_K8M800,        PCI_CHIP_VT3204,    VIA_RES_SHARED},
+    {VIA_PM800,         PCI_CHIP_VT3259,    VIA_RES_SHARED},
+    {VIA_P4M800PRO,     PCI_CHIP_VT3314,    VIA_RES_SHARED},
+    {VIA_CX700,         PCI_CHIP_VT3324,    VIA_RES_SHARED},
+    {VIA_P4M890,        PCI_CHIP_VT3327,    VIA_RES_SHARED},
+    {VIA_K8M890,        PCI_CHIP_VT3336,    VIA_RES_SHARED},
+    {VIA_P4M900,        PCI_CHIP_VT3364,    VIA_RES_SHARED},
+    {VIA_VX800,         PCI_CHIP_VT3353,    VIA_RES_SHARED},
+    {VIA_VX855,         PCI_CHIP_VT3409,    VIA_RES_SHARED},
+    {VIA_VX900,         PCI_CHIP_VT3410,    VIA_RES_SHARED},
+    {-1,                -1,                 VIA_RES_UNDEF}
 };
 
 typedef enum
@@ -236,7 +240,7 @@ static MODULESETUPPROTO(VIASetup);
 
 static XF86ModuleVersionInfo VIAVersRec = {
     "openchrome",
-    "http://openchrome.org/",
+    "http://www.freedesktop.org/wiki/Openchrome/",
     MODINFOSTRING1,
     MODINFOSTRING2,
 #ifdef XORG_VERSION_CURRENT
@@ -496,7 +500,8 @@ via_pci_probe(DriverPtr driver, int entity_num,
         xf86Msg(X_NOTICE,
                 "VIA Technologies does not support this driver in any way.\n");
         xf86Msg(X_NOTICE,
-                "For support, please refer to http://www.openchrome.org/.\n");
+                "For support, please refer to"
+                " http://www.freedesktop.org/wiki/Openchrome/.\n");
 #ifdef BUILDCOMMENT
         xf86Msg(X_NOTICE, BUILDCOMMENT"\n");
 #endif
@@ -536,7 +541,8 @@ VIAProbe(DriverPtr drv, int flags)
 
     xf86Msg(X_NOTICE,
             "VIA Technologies does not support this driver in any way.\n");
-    xf86Msg(X_NOTICE, "For support, please refer to http://openchrome.org/.\n");
+    xf86Msg(X_NOTICE, "For support, please refer to"
+                      " http://www.freedesktop.org/wiki/Openchrome/.\n");
 
 #ifdef BUILDCOMMENT
     xf86Msg(X_NOTICE, BUILDCOMMENT"\n");
@@ -701,7 +707,7 @@ VIASetupDefaultOptions(ScrnInfoPtr pScrn)
             /* FIXME The video playing (XV) is not working correctly after turn on new mode switch */
             pVia->VideoEngine = VIDEO_ENGINE_CME;
             break;
-        case VIA_VM800:
+        case VIA_P4M800PRO:
             /* New mode switch resolve bug with gamma set #282 */
             /* and with Xv after hibernate #240                */
             break;
@@ -710,13 +716,13 @@ VIASetupDefaultOptions(ScrnInfoPtr pScrn)
             pVia->swov.maxWInterp = 1920;
             pVia->swov.maxHInterp = 1080;
             break;
+        case VIA_P4M890:
+            pVia->VideoEngine = VIDEO_ENGINE_CME;
+            pVia->dmaXV = FALSE;
+            break;
         case VIA_K8M890:
             pVia->VideoEngine = VIDEO_ENGINE_CME;
             pVia->agpEnable = FALSE;
-            pVia->dmaXV = FALSE;
-            break;
-        case VIA_P4M890:
-            pVia->VideoEngine = VIDEO_ENGINE_CME;
             pVia->dmaXV = FALSE;
             break;
         case VIA_P4M900:
@@ -806,8 +812,8 @@ via_xf86crtc_resize(ScrnInfoPtr scrn, int width, int height)
 {
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(scrn);
     struct buffer_object *old_front = NULL, *new_front = NULL;
+    int cpp = (scrn->bitsPerPixel + 7) >> 3, fd, i;
     int old_width, old_height, old_dwidth, format;
-    int cpp = (scrn->bitsPerPixel + 7) >> 3, i;
     ScreenPtr screen = scrn->pScreen;
     VIAPtr pVia = VIAPTR(scrn);
     void *new_pixels = NULL;
@@ -825,7 +831,7 @@ via_xf86crtc_resize(ScrnInfoPtr scrn, int width, int height)
         goto fail;
 
     xf86DrvMsg(scrn->scrnIndex, X_INFO,
-                "Allocate new frame buffer %dx%d stride %d\n",
+                "Allocate new frame buffer %dx%d stride %lu\n",
                 width, height, new_front->pitch);
 
     new_pixels = drm_bo_map(scrn, new_front);
@@ -849,7 +855,6 @@ via_xf86crtc_resize(ScrnInfoPtr scrn, int width, int height)
 #if XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1,9,99,1,0)
     scrn->pixmapPrivate.ptr = ppix->devPrivate.ptr;
 #endif
-
     scrn->virtualX = width;
     scrn->virtualY = height;
     scrn->displayWidth = new_front->pitch / cpp;
@@ -859,44 +864,38 @@ via_xf86crtc_resize(ScrnInfoPtr scrn, int width, int height)
         drmmode_crtc_private_ptr drmmode_crtc;
         drmmode_ptr drmmode;
 
-        if (!crtc->enabled || !crtc->driver_private)
+        if (!xf86CrtcInUse(crtc) || !crtc->driver_private)
             continue;
 
         drmmode_crtc = crtc->driver_private;
         drmmode = drmmode_crtc->drmmode;
 
-        old_front = drmmode->front_bo;
-        old_fb_id = drmmode->fb_id;
+        if (drmmode->front_bo != new_front) {
+            old_front = drmmode->front_bo;
+            old_fb_id = drmmode->fb_id;
+            fd = drmmode->fd;
 
-        drmmode->front_bo = new_front;
-        drmmode->fb_id = 0;
+            drmmode->front_bo = new_front;
+            drmmode->fb_id = 0;
+        }
 
-        ret = xf86CrtcSetMode(crtc, &crtc->mode, crtc->rotation,
+        ret = xf86CrtcSetMode(crtc, &crtc->desiredMode, crtc->rotation,
 	                          crtc->x, crtc->y);
         if (!ret) {
-            xf86DrvMsg(scrn->scrnIndex, X_INFO,
-                "SetMode !ret so we reset front_bo\n");
             drmmode->front_bo = old_front;
             drmmode->fb_id = old_fb_id;
-            break;
-#ifdef HAVE_DRI
-        } else {
-            xf86DrvMsg(scrn->scrnIndex, X_INFO,
-                "SetMode ret so we cleanup old front_bo\n");
-            if (pVia->KMS && old_fb_id)
-                drmModeRmFB(drmmode->fd, old_fb_id);
-#endif
+            xf86DrvMsg(scrn->scrnIndex, X_INFO, "xf86CrtcSetMode failed\n");
+            goto fail;
         }
     }
 
-
-    if (ret) {
-        xf86DrvMsg(scrn->scrnIndex, X_INFO,
-                   "More cleanup old front_bo\n");
-        drm_bo_unmap(scrn, old_front);
-        drm_bo_free(scrn, old_front);
-        return ret;
-    }
+#ifdef HAVE_DRI
+    if (pVia->KMS && old_fb_id)
+        drmModeRmFB(fd, old_fb_id);
+#endif
+    drm_bo_unmap(scrn, old_front);
+    drm_bo_free(scrn, old_front);
+    return ret;
 
 fail:
     if (new_front) {
@@ -922,7 +921,7 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
     VIAPtr pVia;
     VIABIOSInfoPtr pBIOSInfo;
     MessageType from = X_DEFAULT;
-    char *s = NULL;
+    const char *s = NULL;
 #ifdef HAVE_DRI
     char *busId = NULL;
     drmVersionPtr drmVer;
@@ -1032,7 +1031,9 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
         pVia->ChipRev = pciReadByte(pciTag(0, 0, 0), 0xF6);
 #endif
     }
-    free(pEnt);
+
+    if (pEnt)
+        free(pEnt);
     xf86DrvMsg(pScrn->scrnIndex, from, "Chipset revision: %d\n", pVia->ChipRev);
 
     pVia->directRenderingType = DRI_NONE;
@@ -1110,7 +1111,6 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
      */
 
     if (!xf86SetDepthBpp(pScrn, 0, 0, 0, Support32bppFb)) {
-        free(pEnt);
         VIAFreeRec(pScrn);
         return FALSE;
     } else {
@@ -1125,7 +1125,6 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
                 xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                            "Given depth (%d) is not supported by this driver\n",
                            pScrn->depth);
-                free(pEnt);
                 VIAFreeRec(pScrn);
                 return FALSE;
         }
@@ -1141,7 +1140,6 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
         rgb zeros = { 0, 0, 0 };
 
         if (!xf86SetWeight(pScrn, zeros, zeros)) {
-            free(pEnt);
             VIAFreeRec(pScrn);
             return FALSE;
         } else {
@@ -1158,7 +1156,6 @@ VIAPreInit(ScrnInfoPtr pScrn, int flags)
             xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Given default visual"
                        " (%s) is not supported at depth %d.\n",
                        xf86GetVisualName(pScrn->defaultVisual), pScrn->depth);
-            free(pEnt);
             VIAFreeRec(pScrn);
             return FALSE;
         }

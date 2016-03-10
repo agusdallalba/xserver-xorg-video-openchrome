@@ -1,5 +1,6 @@
 /*
- * Copyright 2007 The Openchrome Project [openchrome.org]
+ * Copyright 2007-2015 The Openchrome Project
+ *                     [http://www.freedesktop.org/wiki/Openchrome]
  * Copyright 1998-2007 VIA Technologies, Inc. All Rights Reserved.
  * Copyright 2001-2007 S3 Graphics, Inc. All Rights Reserved.
  *
@@ -484,28 +485,55 @@ ViaPanelGetSizeFromDDCv1(xf86OutputPtr output, int *width, int *height)
     VIAPtr pVia = VIAPTR(pScrn);
     xf86MonPtr pMon;
 
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VIAGetPanelSizeFromDDCv1\n"));
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered VIAGetPanelSizeFromDDCv1.\n"));
 
-    if (!(pVia->I2CDevices & VIA_I2C_BUS2))
+    if (!pVia->pI2CBus2) {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                    "I2C Bus 2 does not exist.\n");
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                            "Exiting VIAGetPanelSizeFromDDCv1.\n"));
+        return FALSE;
+    }
+
+    if (!xf86I2CProbeAddress(pVia->pI2CBus2, 0xA0)) {
+        xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                    "I2C device on I2C Bus 2 does not support EDID.\n");
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                            "Exiting VIAGetPanelSizeFromDDCv1.\n"));
+        return FALSE;
+    }
+
+    /* Probe I2C Bus 2 to see if a flat panel is connected. */
+    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                "Probing for a flat panel on I2C Bus 2.\n");
+    pMon = xf86OutputGetEDID(output, pVia->pI2CBus2);
+    if (pMon && DIGITAL(pMon->features.input_type)) {
+        xf86OutputSetEDID(output, pMon);
+        xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                    "Detected a flat panel on I2C Bus 2.\n");
+    } else {
+        xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                    "Did not detect a flat panel on I2C Bus 2.\n");
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                            "Exiting VIAGetPanelSizeFromDDCv1.\n"));
         return FALSE;
 
-    if (!xf86I2CProbeAddress(pVia->pI2CBus2, 0xA0))
-        return FALSE;
-
-    pMon = xf86DoEEDID(XF86_SCRN_ARG(pScrn), pVia->pI2CBus2, TRUE);
-    if (!pMon)
-        return FALSE;
-
-    xf86OutputSetEDID(output, pMon);
+    }
 
     if (!ViaPanelGetSizeFromEDID(pScrn, pMon, width, height)) {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                   "Unable to read PanelSize from EDID information\n");
+                    "Unable to obtain panel size from EDID information.\n");
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                            "Exiting VIAGetPanelSizeFromDDCv1.\n"));
         return FALSE;
     }
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                     "VIAGetPanelSizeFromDDCv1: (%dx%d)\n", *width, *height));
+                        "VIAGetPanelSizeFromDDCv1: (%d X %d)\n",
+                        *width, *height));
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting VIAGetPanelSizeFromDDCv1.\n"));
     return TRUE;
 }
 
@@ -1448,6 +1476,8 @@ static const xf86OutputFuncsRec via_lvds_funcs = {
     .create_resources   = via_lvds_create_resources,
 #ifdef RANDR_12_INTERFACE
     .set_property       = via_lvds_set_property,
+#endif
+#ifdef RANDR_13_INTERFACE
     .get_property       = via_lvds_get_property,
 #endif
     .dpms               = via_lvds_dpms,
@@ -1468,7 +1498,8 @@ static const xf86OutputFuncsRec via_lvds_funcs = {
  * using name with format "9999x9999".
  */
 static void
-ViaPanelGetNativeModeFromOption(ScrnInfoPtr pScrn, ViaPanelInfoPtr panel, char *name)
+ViaPanelGetNativeModeFromOption(ScrnInfoPtr pScrn, ViaPanelInfoPtr panel,
+								const char *name)
 {
     char aux[strlen(name) + 1];
     CARD8 length, index;
@@ -1500,7 +1531,7 @@ via_lvds_init(ScrnInfoPtr pScrn)
     VIAPtr pVia = VIAPTR(pScrn);
     xf86OutputPtr output = NULL;
     Bool ForcePanel = FALSE;
-    char *s = NULL;
+    const char *s = NULL;
 
     if (!Panel)
         return;
