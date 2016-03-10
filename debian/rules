@@ -31,4 +31,4 @@ override_dh_strip:
 	dh_strip --dbg-package=xserver-xorg-video-openchrome-dbg
 
 %:
-	dh $@ --with quilt,autoreconf,xsf --builddirectory=build/
+	dh $@ --parallel --with quilt,autoreconf,xsf --builddirectory=build/
