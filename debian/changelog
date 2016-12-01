@@ -1,3 +1,10 @@
+xserver-xorg-video-openchrome (1:0.5.0-1) UNRELEASED; urgency=medium
+
+  * Team upload.
+  * New upstream release.
+
+ -- Dylan Aïssi <bob.dybian@gmail.com>  Thu, 01 Dec 2016 23:17:22 +0100
+
 xserver-xorg-video-openchrome (1:0.3.3+git20160310-1) unstable; urgency=medium
 
   * New upstream snapshot (Closes: #814682)
