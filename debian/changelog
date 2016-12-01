@@ -7,6 +7,7 @@ xserver-xorg-video-openchrome (1:0.5.0-1) UNRELEASED; urgency=medium
   * Add debian/source/format file.
   * Architectures:
      - Remove LPIA discontinuted.
+     - Add x32 (Closes: #775201).
 
  -- Dylan Aïssi <bob.dybian@gmail.com>  Thu, 01 Dec 2016 23:17:22 +0100
 
