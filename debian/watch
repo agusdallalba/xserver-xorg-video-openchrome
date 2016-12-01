@@ -1,3 +1,2 @@
-version=3
-
-http://xorg.freedesktop.org/archive/individual/driver//xf86-video-openchrome-(\d.*)\.tar\.gz
+version=4
+https://xorg.freedesktop.org/releases/individual/driver/ xf86-video-openchrome-(\d.*)\.tar\.gz
