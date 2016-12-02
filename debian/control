@@ -2,25 +2,24 @@ Source: xserver-xorg-video-openchrome
 Section: x11
 Priority: optional
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
-Build-Depends:
- debhelper (>= 8),
- dh-autoreconf,
- pkg-config,
- xserver-xorg-dev (>= 2:1.9.4),
- xutils-dev,
- x11proto-core-dev,
- x11proto-fonts-dev,
- x11proto-randr-dev,
- x11proto-render-dev,
- x11proto-xext-dev,
- x11proto-xf86dri-dev,
- x11proto-video-dev,
- x11proto-gl-dev,
- libdrm-dev (>> 2.0) [!hurd-i386],
- libx11-dev,
- libgl1-mesa-dev | libgl1-dev,
- libxvmc-dev,
- quilt
+Build-Depends: debhelper (>= 8),
+               dh-autoreconf,
+               libdrm-dev (>> 2.0) [!hurd-i386],
+               libgl1-mesa-dev | libgl1-dev,
+               libx11-dev,
+               libxvmc-dev,
+               pkg-config,
+               quilt,
+               x11proto-core-dev,
+               x11proto-fonts-dev,
+               x11proto-gl-dev,
+               x11proto-randr-dev,
+               x11proto-render-dev,
+               x11proto-video-dev,
+               x11proto-xext-dev,
+               x11proto-xf86dri-dev,
+               xserver-xorg-dev (>= 2:1.9.4),
+               xutils-dev
 Build-Conflicts: autoconf2.13
 Standards-Version: 3.9.8
 Homepage: https://www.freedesktop.org/wiki/Openchrome/
@@ -28,13 +27,9 @@ Vcs-Git: https://anonscm.debian.org/git/pkg-xorg/driver/xserver-xorg-video-openc
 Vcs-Browser: https://anonscm.debian.org/git/pkg-xorg/driver/xserver-xorg-video-openchrome.git
 
 Package: xserver-xorg-video-openchrome
-Architecture: i386 amd64 x32 hurd-i386 kfreebsd-i386 kfreebsd-amd64
-Depends:
- ${shlibs:Depends},
- ${misc:Depends},
- ${xviddriver:Depends},
-Provides:
- ${xviddriver:Provides}
+Architecture: amd64 hurd-i386 i386 kfreebsd-amd64 kfreebsd-i386 x32
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${xviddriver:Depends}
+Provides: ${xviddriver:Provides}
 Description: X.Org X server -- VIA display driver
  OpenChrome is a project for the development of free and open-source drivers
  for the VIA UniChrome video chipsets.
@@ -50,12 +45,10 @@ Description: X.Org X server -- VIA display driver
  and open-source drivers is to use this version of the driver.
 
 Package: xserver-xorg-video-openchrome-dbg
-Architecture: i386 amd64 x32 hurd-i386 kfreebsd-i386 kfreebsd-amd64
+Architecture: amd64 hurd-i386 i386 kfreebsd-amd64 kfreebsd-i386 x32
 Section: debug
 Priority: extra
-Depends:
- xserver-xorg-video-openchrome (= ${binary:Version}),
- ${misc:Depends}
+Depends: xserver-xorg-video-openchrome (= ${binary:Version}), ${misc:Depends}
 Description: X.Org X server -- VIA display driver -- debugging symbols
  OpenChrome is a project for the development of free and open-source drivers
  for the VIA UniChrome video chipsets.
