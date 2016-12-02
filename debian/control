@@ -2,7 +2,6 @@ Source: xserver-xorg-video-openchrome
 Section: x11
 Priority: optional
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
-DM-Upload-Allowed: yes
 Build-Depends:
  debhelper (>= 8),
  dh-autoreconf,
@@ -23,7 +22,7 @@ Build-Depends:
  libxvmc-dev,
  quilt
 Build-Conflicts: autoconf2.13
-Standards-Version: 3.9.3
+Standards-Version: 3.9.8
 Homepage: https://www.freedesktop.org/wiki/Openchrome/
 Vcs-Git: https://anonscm.debian.org/git/pkg-xorg/driver/xserver-xorg-video-openchrome.git
 Vcs-Browser: https://anonscm.debian.org/git/pkg-xorg/driver/xserver-xorg-video-openchrome.git
