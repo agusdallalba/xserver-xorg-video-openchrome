@@ -2,7 +2,8 @@
 
 DEB_CONFIGURE_EXTRA_FLAGS := \
 	--disable-maintainer-mode \
-	--disable-dependency-tracking
+	--disable-dependency-tracking \
+	--libdir=/usr/lib
 
 ifneq (,$(filter debug,$(DEB_BUILD_OPTIONS)))
 DEB_CONFIGURE_EXTRA_FLAGS += \
@@ -34,7 +35,7 @@ override_dh_strip:
 	dh_strip --dbg-package=xserver-xorg-video-openchrome-dbg
 
 %:
-	dh $@ --parallel --with quilt,autoreconf,xsf --builddirectory=build/
+	dh $@ --with quilt,autoreconf,xsf --builddirectory=build/
 
 gentarball: SOURCE=xserver-xorg-video-openchrome
 gentarball: UV=$(shell dpkg-parsechangelog|awk '/^Version:/ {print $$2}'|sed 's/^[0-9]*://;s/-.*$$//')
