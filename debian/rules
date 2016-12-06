@@ -35,7 +35,7 @@ override_dh_strip:
 	dh_strip --dbg-package=xserver-xorg-video-openchrome-dbg
 
 %:
-	dh $@ --with quilt,autoreconf,xsf --builddirectory=build/
+	dh $@ --with quilt,xsf --builddirectory=build/
 
 gentarball: SOURCE=xserver-xorg-video-openchrome
 gentarball: UV=$(shell dpkg-parsechangelog|awk '/^Version:/ {print $$2}'|sed 's/^[0-9]*://;s/-.*$$//')

@@ -4,7 +4,6 @@ Priority: optional
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
 Build-Depends:
  debhelper (>= 10),
- dh-autoreconf,
  libdrm-dev (>> 2.0) [!hurd-i386],
  libgl1-mesa-dev | libgl1-dev,
  libx11-dev,
