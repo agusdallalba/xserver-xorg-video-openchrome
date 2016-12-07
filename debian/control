@@ -18,7 +18,7 @@ Build-Depends:
  x11proto-video-dev,
  x11proto-xext-dev,
  x11proto-xf86dri-dev,
- xserver-xorg-dev (>= 2:1.9.4),
+ xserver-xorg-dev (>= 2:1.17),
  xutils-dev
 Build-Conflicts:
  autoconf2.13
