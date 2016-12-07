@@ -1,12 +1,12 @@
 xserver-xorg-video-openchrome (1:0.5.0-1) UNRELEASED; urgency=medium
 
   * Team upload.
-  * New upstream release.
+  * New upstream release. (LP: #1640787)
   * Update VCS fields.
   * Update lintian overrides.
   * Add debian/source/format file.
   * Architectures:
-     - Remove LPIA discontinuted.
+     - Remove LPIA discontinued.
      - Add x32 (Closes: #775201).
   * Remove libdrm-dev from Build-Depend for Hurd (Closes: #672546).
   * Update debian/watch.
