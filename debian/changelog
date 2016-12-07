@@ -17,6 +17,7 @@ xserver-xorg-video-openchrome (1:0.5.0-1) UNRELEASED; urgency=medium
   * Add a patch to fix a spelling error.
   * Switch from -dbg to -dbgsym package.
   * Bump Build-Depends xserver-xorg-dev to >= 2:1.17.
+  * Add a patch to enable reproducible build (Closes: #831405).
 
  -- Dylan Aïssi <bob.dybian@gmail.com>  Thu, 01 Dec 2016 23:17:22 +0100
 
