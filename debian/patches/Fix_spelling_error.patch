@@ -1,7 +1,7 @@
 Author: Dylan Aïssi
 Description: Fix spelling error.
 Last-Update: 2016-12-06
-Forwarded: TODO
+Forwarded: https://bugs.freedesktop.org/show_bug.cgi?id=99074
 
 --- a/src/via_xv.c
 +++ b/src/via_xv.c
