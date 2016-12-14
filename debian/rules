@@ -24,9 +24,14 @@ override_dh_auto_install:
 # Kill *.la files, and forget no-one:
 override_dh_install:
 	find debian/tmp -name '*.la' -delete
+
+  # Do not try to install libchromeXvMC* on Hurd since they are not build
+  ifneq ($(DEB_HOST_ARCH_OS), hurd)
 	mkdir -p debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)
 	mv debian/tmp/usr/lib/libchromeXvMC* \
 		debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/.
+  endif
+
 	dh_install --fail-missing
 
 # That's a plugin, use appropriate warning level:

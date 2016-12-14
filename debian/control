@@ -5,7 +5,7 @@ Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
 Uploaders: Dylan Aïssi <bob.dybian@gmail.com>
 Build-Depends:
  debhelper (>= 10),
- libdrm-dev (>> 2.0) [!hurd-i386],
+ libdrm-dev (>> 2.0) [!hurd-any],
  libgl1-mesa-dev | libgl1-dev,
  libx11-dev,
  libxvmc-dev,
