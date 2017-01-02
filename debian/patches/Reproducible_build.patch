@@ -1,7 +1,7 @@
 Author: Chris Lamb
 Description: Make the build reproducible.
 Origin: https://bugs.debian.org/831405
-Forwarded: https://bugs.freedesktop.org/show_bug.cgi?id=98896
+Applied-Upstream: 0.5.173, https://cgit.freedesktop.org/openchrome/xf86-video-openchrome/commit/?id=25ba0a4
 
 --- a/src/Makefile.am	2016-07-15 17:56:15.066700891 +0200
 --- b/src/Makefile.am	2016-07-15 18:22:08.362042386 +0200

@@ -1,7 +1,7 @@
 Author: Dylan Aïssi
 Description: Fix spelling error.
 Last-Update: 2016-12-06
-Forwarded: https://bugs.freedesktop.org/show_bug.cgi?id=99074
+Applied-Upstream: 0.5.173, https://cgit.freedesktop.org/openchrome/xf86-video-openchrome/commit/?id=56b3faf
 
 --- a/src/via_xv.c
 +++ b/src/via_xv.c
