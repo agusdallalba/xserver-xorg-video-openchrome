@@ -3,3 +3,5 @@ xserver-xorg-video-openchrome: non-dev-pkg-with-shlib-symlink
 xserver-xorg-video-openchrome: package-name-doesnt-match-sonames libchromeXvMC1 libchromeXvMCPro1
 xserver-xorg-video-openchrome: no-symbols-control-file
 xserver-xorg-video-openchrome: no-symbols-control-file
+# Currently (January 2017) xorg video drivers are incompatible with bindnow hardening.
+xserver-xorg-video-openchrome: hardening-no-bindnow
