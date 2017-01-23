@@ -3,8 +3,9 @@ xserver-xorg-video-openchrome (1:0.5.0-3) UNRELEASED; urgency=medium
   * Disable "hardening=+all" that currently only activate bindnow.
      The latter is not supported by xorg video drivers and
      it prevents the loading of the driver.
+  * Cleanup of lintian overrides.
 
- -- Dylan Aïssi <bob.dybian@gmail.com>  Mon, 23 Jan 2017 22:11:31 +0100
+ -- Dylan Aïssi <bob.dybian@gmail.com>  Mon, 23 Jan 2017 22:56:06 +0100
 
 xserver-xorg-video-openchrome (1:0.5.0-2) unstable; urgency=medium
 
