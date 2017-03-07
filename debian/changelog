@@ -3,6 +3,7 @@ xserver-xorg-video-openchrome (1:0.5.0-4) UNRELEASED; urgency=medium
   * Decrease the minimal version of xserver-xorg-dev to 1.9.4.
      No really need to have higher version.
   * Install the upstream README file.
+  * Install the true upstream changelog file: NEWS instead ChangLog.
 
  -- Dylan Aïssi <bob.dybian@gmail.com>  Tue, 14 Feb 2017 23:30:57 +0100
 
