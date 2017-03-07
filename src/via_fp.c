@@ -1,6 +1,6 @@
 /*
  * Copyright 2007-2015 The Openchrome Project
- *                     [http://www.freedesktop.org/wiki/Openchrome]
+ *                     [https://www.freedesktop.org/wiki/Openchrome]
  * Copyright 1998-2007 VIA Technologies, Inc. All Rights Reserved.
  * Copyright 2001-2007 S3 Graphics, Inc. All Rights Reserved.
  *
@@ -49,28 +49,34 @@ static OptionInfoRec ViaPanelOptions[] =
     {-1,                NULL,           OPTV_NONE,      {0},    FALSE}
 };
 
+/* These table values were copied from lcd.c of VIA Frame 
+ * Buffer device driver. */
+/* {int Width, int Height, bool useDualEdge, bool useDithering}; */
 static ViaPanelModeRec ViaPanelNativeModes[] = {
-    {640, 480},
-    {800, 600},
-    {1024, 768},
-    {1280, 768},
-    {1280, 1024},
-    {1400, 1050},
-    {1600, 1200},   /* 0x6 */
-    {1280, 800},    /* 0x7 Resolution 1280x800 (Samsung NC20) */
-    {800, 480},     /* 0x8 For Quanta 800x480 */
-    {1024, 600},    /* 0x9 Resolution 1024x600 (for HP 2133) */
-    {1368, 768},    /* 0xA Resolution 1366x768 */
-    {1920, 1080},
-    {1920, 1200},
-    {1280, 1024},   /* 0xD */
-    {1440, 900},    /* 0xE */
-    {1280, 720},    /* 0xF 480x640 */
-    {1200, 900},   /* 0x10 For OLPC 1.5 */
-    {1360, 768},   /* 0x11 Resolution 1360X768 */
-    {1024, 768},   /* 0x12 Resolution 1024x768 */
-    {800, 480}     /* 0x13 General 8x4 panel use this setting */
-};
+    { 640,  480, FALSE,  TRUE},
+    { 800,  600, FALSE,  TRUE},
+    {1024,  768, FALSE,  TRUE},
+    {1280,  768, FALSE,  TRUE},
+    {1280, 1024,  TRUE,  TRUE},
+    {1400, 1050,  TRUE,  TRUE},
+    {1600, 1200,  TRUE,  TRUE},
+    {1280,  800, FALSE,  TRUE},
+    { 800,  480, FALSE,  TRUE},
+    {1024,  768,  TRUE,  TRUE},
+    {1024,  768, FALSE, FALSE},
+    {1024,  768,  TRUE, FALSE},
+    {1280,  768, FALSE, FALSE},
+    {1280, 1024,  TRUE, FALSE},
+    {1400, 1050,  TRUE, FALSE},
+    {1600, 1200,  TRUE, FALSE},
+    {1366,  768, FALSE, FALSE},
+    {1024,  600, FALSE,  TRUE},
+    {1280,  768,  TRUE,  TRUE},
+    {1280,  800, FALSE,  TRUE},
+    {1360,  768, FALSE, FALSE},
+    {1280,  768,  TRUE, FALSE},
+    { 480,  640, FALSE,  TRUE},
+    {1200,  900, FALSE, FALSE}};
 
 #define MODEPREFIX(name) NULL, NULL, name, 0, M_T_DRIVER | M_T_DEFAULT
 #define MODESUFFIX 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,FALSE,FALSE,0,NULL,0,0.0,0.0
@@ -98,6 +104,451 @@ static DisplayModeRec OLPCMode = {
 #define TD1 25
 #define TD2 0
 #define TD3 25
+
+/*
+ * Sets CX700 or later single chipset's LVDS1 I/O pad state.
+ */
+void
+viaLVDS1SetIOPadSetting(ScrnInfoPtr pScrn, CARD8 ioPadState)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaLVDS1SetIOPadSetting.\n"));
+
+    /* Set LVDS1 I/O pad state. */
+    /* 3C5.2A[1:0] - LVDS1 I/O Pad Control */
+    ViaSeqMask(hwp, 0x2A, ioPadState, 0x03);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "LVDS1 I/O Pad State: %d\n",
+                (ioPadState & 0x03));
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaLVDS1SetIOPadSetting.\n"));
+}
+
+/*
+ * Sets IGA1 or IGA2 as the display output source for VIA Technologies
+ * Chrome IGP LVDS1 integrated LVDS transmitter.
+ */
+static void
+viaLVDS1SetDisplaySource(ScrnInfoPtr pScrn, CARD8 displaySource)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+    CARD8 temp = displaySource;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaLVDS1SetDisplaySource.\n"));
+
+    /* Set LVDS1 integrated LVDS transmitter display output source. */
+    /* 3X5.99[4] - LVDS Channel 1 Data Source Selection
+     *             0: Primary Display
+     *             1: Secondary Display */
+    ViaCrtcMask(hwp, 0x99, temp << 4, 0x10);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "LVDS1 Integrated LVDS Transmitter Display Output "
+                "Source: IGA%d\n",
+                (temp & 0x01) + 1);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaLVDS1SetDisplaySource.\n"));
+}
+
+/*
+ * Sets LVDS1 (LVDS Channel 1) integrated LVDS transmitter format.
+ */
+static void
+viaLVDS1SetFormat(ScrnInfoPtr pScrn, CARD8 format)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaLVDS1SetFormat.\n"));
+
+    /* Set LVDS1 format. */
+    /* 3X5.D2[1] - LVDS Channel 1 Format Selection
+     *             0: SPWG Mode
+     *             1: OPENLDI Mode */
+    ViaCrtcMask(hwp, 0xD2, format << 1, 0x02);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "LVDS1 Format: %s\n",
+                (format & 0x01) ? "OPENLDI" : "SPWG");
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaLVDS1SetFormat.\n"));
+}
+
+/*
+ * Sets CX700 or later single chipset's LVDS2 I/O pad state.
+ */
+static void
+viaLVDS2SetIOPadSetting(ScrnInfoPtr pScrn, CARD8 ioPadState)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaLVDS2SetIOPadSetting.\n"));
+
+    /* Set LVDS2 I/O pad state. */
+    /* 3C5.2A[3:2] - LVDS2 I/O Pad Control */
+    ViaSeqMask(hwp, 0x2A, ioPadState << 2, 0x0C);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "LVDS2 I/O Pad State: %d\n",
+                (ioPadState & 0x03));
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaLVDS2SetIOPadSetting.\n"));
+}
+
+/*
+ * Sets IGA1 or IGA2 as the display output source for VIA Technologies
+ * Chrome IGP LVDS2 integrated LVDS transmitter.
+ */
+static void
+viaLVDS2SetDisplaySource(ScrnInfoPtr pScrn, CARD8 displaySource)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+    CARD8 temp = displaySource;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaLVDS2SetDisplaySource.\n"));
+
+    /* Set LVDS2 integrated LVDS transmitter display output source. */
+    /* 3X5.97[4] - LVDS Channel 2 Data Source Selection
+     *             0: Primary Display
+     *             1: Secondary Display */
+    ViaCrtcMask(hwp, 0x97, temp << 4, 0x10);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "LVDS2 Integrated LVDS Transmitter Display Output "
+                "Source: IGA%d\n",
+                (temp & 0x01) + 1);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaLVDS2SetDisplaySource.\n"));
+}
+
+/*
+ * Sets LVDS2 (LVDS Channel 2) integrated LVDS transmitter delay tap.
+ */
+static void
+viaLVDS2SetDelayTap(ScrnInfoPtr pScrn, CARD8 delayTap)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaLVDS2SetDelayTap.\n"));
+
+    /* Set LVDS2 delay tap. */
+    /* 3X5.97[3:0] - LVDS2 Delay Tap */
+    ViaCrtcMask(hwp, 0x97, delayTap, 0x0F);
+
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "LVDS2 Delay Tap: %d\n",
+                (delayTap & 0x0F));
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaLVDS2SetDelayTap.\n"));
+}
+
+/*
+ * Sets LVDS2 (LVDS Channel 2) integrated LVDS transmitter format.
+ */
+static void
+viaLVDS2SetFormat(ScrnInfoPtr pScrn, CARD8 format)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaLVDS2SetFormat.\n"));
+
+    /* Set LVDS2 format. */
+    /* 3X5.D2[0] - LVDS Channel 2 Format Selection
+     *             0: SPWG Mode
+     *             1: OPENLDI Mode */
+    ViaCrtcMask(hwp, 0xD2, format, 0x01);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "LVDS2 Format: %s\n",
+                (format & 0x01) ? "OPENLDI" : "SPWG");
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaLVDS2SetFormat.\n"));
+}
+
+/*
+ * Sets IGA1 or IGA2 as the display output source for VIA Technologies
+ * Chrome IGP DFP (Digital Flat Panel) High interface.
+ */
+static void
+viaDFPHighSetDisplaySource(ScrnInfoPtr pScrn, CARD8 displaySource)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+    CARD8 temp = displaySource;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaDFPHighSetDisplaySource.\n"));
+
+    /* Set DFP High display output source. */
+    /* 3X5.97[4] - DFP High Data Source Selection
+     *             0: Primary Display
+     *             1: Secondary Display */
+    ViaCrtcMask(hwp, 0x97, temp << 4, 0x10);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "DFP High Display Output Source: IGA%d\n",
+                (temp & 0x01) + 1);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaDFPHighSetDisplaySource.\n"));
+}
+
+/*
+ * Sets DFP (Digital Flat Panel) Low interface delay tap.
+ */
+static void
+viaDFPLowSetDelayTap(ScrnInfoPtr pScrn, CARD8 delayTap)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaDFPLowSetDelayTap.\n"));
+
+    /* Set DFP Low interface delay tap. */
+    /* 3X5.99[3:0] - DFP Low Delay Tap */
+    ViaCrtcMask(hwp, 0x99, delayTap, 0x0F);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "DFP Low Delay Tap: %d\n",
+                (delayTap & 0x0F));
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaDFPLowSetDelayTap.\n"));
+}
+
+/*
+ * Sets DFP (Digital Flat Panel) High interface delay tap.
+ */
+static void
+viaDFPHighSetDelayTap(ScrnInfoPtr pScrn, CARD8 delayTap)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaDFPHighSetDelayTap.\n"));
+
+    /* Set DFP High interface delay tap. */
+    /* 3X5.97[3:0] - DFP High Delay Tap */
+    ViaCrtcMask(hwp, 0x97, delayTap, 0x0F);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "DFP High Delay Tap: %d\n",
+                (delayTap & 0x0F));
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaDFPHighSetDelayTap.\n"));
+}
+
+/*
+ * Turns LVDS2 output color dithering on or off. (18-bit color display vs.
+ * 24-bit color display)
+ */
+static void
+viaLVDS2SetDithering(ScrnInfoPtr pScrn, CARD8 ditheringStatus)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaLVDS2SetDithering.\n"));
+
+    /* Set LVDS2 output color dithering bit. */
+    /* 3X5.D4[6] - LVDS Channel 2 Output Bits
+     *             0: 24 bits (dithering off)
+     *             1: 18 bits (dithering on) */
+    ViaCrtcMask(hwp, 0xD4, ditheringStatus ? 0x40 : 0x00, 0x40);
+
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "LVDS2 Output Color Dithering: %s\n",
+                ditheringStatus ? "On (18 bit)" : "Off (24 bit)");
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaLVDS2SetDithering.\n"));
+}
+
+/*
+ * Sets output format of LVDS2 to rotation or sequential mode.
+ */
+static void
+viaLVDS2SetOutputFormat(ScrnInfoPtr pScrn, CARD8 outputFormat)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaLVDS2SetOutputFormat.\n"));
+
+    /* Set LVDS2 output format. */
+    /* 3X5.D4[7] - LVDS Channel 2 Output Format
+     *             0: Rotation
+     *             1: Sequential */
+    ViaCrtcMask(hwp, 0xD4, outputFormat ? 0x80 : 0x00, 0x80);
+
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "LVDS2 Output Format: %s\n",
+                outputFormat ? "Sequential" : "Rotation");
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaLVDS2SetOutputFormat.\n"));
+}
+
+/*
+ * Sets PCIe based 2 chip chipset's pin multiplexed DVP0 I/O pad state.
+ */
+static void
+viaDVP0PCIeSetIOPadSetting(ScrnInfoPtr pScrn, CARD8 ioPadState)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaDVP0PCIeSetIOPadSetting.\n"));
+
+    /* Set pin multiplexed DVP1 I/O pad state. */
+    /* 3C5.2A[3:2] - DVP0 I/O Pad Control */
+    ViaSeqMask(hwp, 0x2A, ioPadState << 2, 0x0C);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "DVP0 I/O Pad State: %d\n",
+                (ioPadState & 0x03));
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaDVP0PCIeSetIOPadSetting.\n"));
+}
+
+/*
+ * Sets PCIe based 2 chip chipset's pin multiplexed DVP1 I/O pad state.
+ */
+static void
+viaDVP1PCIeSetIOPadSetting(ScrnInfoPtr pScrn, CARD8 ioPadState)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaDVP1PCIeSetIOPadSetting.\n"));
+
+    /* Set pin multiplexed DVP0 I/O pad state. */
+    /* 3C5.2A[1:0] - DVP1 I/O Pad Control */
+    ViaSeqMask(hwp, 0x2A, ioPadState, 0x03);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "DVP1 I/O Pad State: %d\n",
+                (ioPadState & 0x03));
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaDVP1PCIeSetIOPadSetting.\n"));
+}
+
+static void
+viaFPIOPadSetting(ScrnInfoPtr pScrn, Bool ioPadOn)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+    VIAPtr pVia = VIAPTR(pScrn);
+    CARD8 sr12, sr13, sr5a;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaFPIOPadSetting.\n"));
+
+    if ((pVia->Chipset == VIA_CX700)
+        || (pVia->Chipset == VIA_VX800)
+        || (pVia->Chipset == VIA_VX855)
+        || (pVia->Chipset == VIA_VX900)) {
+
+        sr5a = hwp->readSeq(hwp, 0x5A);
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                            "SR5A: 0x%02X\n", sr5a));
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                            "Setting 3C5.5A[0] to 0.\n"));
+        ViaSeqMask(hwp, 0x5A, sr5a & 0xFE, 0x01);
+    }
+
+    sr12 = hwp->readSeq(hwp, 0x12);
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "SR12: 0x%02X\n", sr12));
+    sr13 = hwp->readSeq(hwp, 0x13);
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "SR13: 0x%02X\n", sr13));
+
+    switch (pVia->Chipset) {
+    case VIA_CLE266:
+        break;
+    case VIA_KM400:
+    case VIA_K8M800:
+    case VIA_PM800:
+    case VIA_P4M800PRO:
+        break;
+    case VIA_P4M890:
+    case VIA_K8M890:
+    case VIA_P4M900:
+        /* The tricky thing about VIA Technologies PCI Express based
+         * north bridge / south bridge 2 chip chipset is that
+         * it pin multiplexes DVP0 / DVP1 with north bridge's PCI
+         * Express x16 link. In particular, HP 2133 Mini-Note's WLAN
+         * is connected to north bridge's PCI Express Lane 0, but the
+         * Lane 0 is also pin multiplexed with DVP0. What this means is
+         * turning on DVP0 without probing the relevant strapping pin
+         * to determine the connected panel interface type will lead to
+         * the PCIe based WLAN to getting disabled by OpenChrome DDX
+         * when X.Org Server starts.
+         *     The current remedy for this will be to turn on DVP0
+         * only when an 18-bit / 24-bit interface flat panel is 
+         * connected. */
+        /* 3C5.12[4] - DVP0D4 pin strapping
+         *             0: Use DVP1 only for a flat panel.
+         *             1: Use DVP0 and DVP1 for a flat panel */
+        if (sr12 & 0x10) {
+            /* Since an 18-bit / 24-bit flat panel is being used, actively
+             * control DVP0. */
+            viaDVP0PCIeSetIOPadSetting(pScrn, ioPadOn ? 0x03 : 0x00);
+        } else {
+            /* Keep DVP0 powered down. Otherwise, it will interfere with
+             * PCIe Lane 0 through 7. */
+            viaDVP0PCIeSetIOPadSetting(pScrn, 0x00);
+        }
+
+        /* Control DVP1 for a flat panel. */
+        viaDVP1PCIeSetIOPadSetting(pScrn, ioPadOn ? 0x03 : 0x00);
+        break;
+    case VIA_CX700:
+    case VIA_VX800:
+    case VIA_VX855:
+    case VIA_VX900:
+        /* 3C5.13[7:6] - DVP1D15 and DVP1D14 pin strappings
+         *               00: LVDS1 + LVDS2
+         *               01: DVI + LVDS2
+         *               10: Dual LVDS (LVDS1 + LVDS2 used 
+         *                   simultaneously)
+         *               11: DVI only */
+        if ((((~(sr13 & 0x80)) && (~(sr13 & 0x40)))
+             || ((sr13 & 0x80) && (~(sr13 & 0x40))))
+           && (!pVia->isVIANanoBook)) {
+
+            viaLVDS1SetIOPadSetting(pScrn, ioPadOn ? 0x03 : 0x00);
+        }
+
+        if (((~(sr13 & 0x80)) || (~(sr13 & 0x40))) 
+           || (pVia->isVIANanoBook)) {
+
+            viaLVDS2SetIOPadSetting(pScrn, ioPadOn ? 0x03 : 0x00);
+        }
+        break;
+    default:
+        break;
+    }
+
+    if ((pVia->Chipset == VIA_CX700)
+        || (pVia->Chipset == VIA_VX800)
+        || (pVia->Chipset == VIA_VX855)
+        || (pVia->Chipset == VIA_VX900)) {
+
+        hwp->writeSeq(hwp, 0x5A, sr5a);
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                            "Restoring 3C5.5A[0].\n"));
+    }
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaFPIOPadSetting.\n"));
+}
 
 static void
 ViaLVDSSoftwarePowerFirstSequence(ScrnInfoPtr pScrn, Bool on)
@@ -255,19 +706,47 @@ ViaLVDSPowerChannel(ScrnInfoPtr pScrn, Bool on)
 static void
 ViaLVDSPower(ScrnInfoPtr pScrn, Bool Power_On)
 {
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
     VIAPtr pVia = VIAPTR(pScrn);
+    CARD8 crd2;
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered ViaLVDSPower.\n"));
+
     /*
      * VX800, CX700 have HW issue, so we'd better use SW power sequence
      * Fix Ticket #308
      */
     switch (pVia->Chipset) {
-    case VIA_VX800:
     case VIA_CX700:
-        ViaLVDSSoftwarePowerFirstSequence(pScrn, Power_On);
+    case VIA_VX800:
+
+        /* Is the integrated TMDS transmitter (DVI) not in use? */
+        crd2 = hwp->readCrtc(hwp, 0xD2);
+        if (((pVia->Chipset == VIA_CX700)
+                || (pVia->Chipset == VIA_VX800)
+                || (pVia->Chipset == VIA_VX855)
+                || (pVia->Chipset == VIA_VX900))
+            && (!(crd2 & 0x10))) {
+            ViaLVDSSoftwarePowerFirstSequence(pScrn, Power_On);
+        }
+
         ViaLVDSSoftwarePowerSecondSequence(pScrn, Power_On);
+        break;
+
+    case VIA_VX855:
+    case VIA_VX900:
+        /* Is the integrated TMDS transmitter (DVI) not in use? */
+        crd2 = hwp->readCrtc(hwp, 0xD2);
+        if (((pVia->Chipset == VIA_CX700)
+                || (pVia->Chipset == VIA_VX800)
+                || (pVia->Chipset == VIA_VX855)
+                || (pVia->Chipset == VIA_VX900))
+            && (!(crd2 & 0x10))) {
+            ViaLVDSHardwarePowerFirstSequence(pScrn, Power_On);
+        }
+
+        ViaLVDSHardwarePowerSecondSequence(pScrn, Power_On);
         break;
     default:
         ViaLVDSHardwarePowerFirstSequence(pScrn, Power_On);
@@ -284,26 +763,6 @@ ViaLVDSPower(ScrnInfoPtr pScrn, Bool Power_On)
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Exiting ViaLVDSPower.\n"));
 }
-
-static void
-via_lvds_create_resources(xf86OutputPtr output)
-{
-}
-
-#ifdef RANDR_12_INTERFACE
-static Bool
-via_lvds_set_property(xf86OutputPtr output, Atom property,
-						RRPropertyValuePtr value)
-{
-    return FALSE;
-}
-
-static Bool
-via_lvds_get_property(xf86OutputPtr output, Atom property)
-{
-    return FALSE;
-}
-#endif
 
 static void
 ViaLCDPowerSequence(vgaHWPtr hwp, VIALCDPowerSeqRec Sequence)
@@ -367,54 +826,6 @@ ViaLCDPower(xf86OutputPtr output, Bool Power_On)
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Exiting ViaLCDPower.\n"));
-}
-
-static void
-via_lvds_dpms(xf86OutputPtr output, int mode)
-{
-    ScrnInfoPtr pScrn = output->scrn;
-    VIAPtr pVia = VIAPTR(pScrn);
-
-    switch (mode) {
-    case DPMSModeOn:
-        switch (pVia->Chipset) {
-        case VIA_P4M900:
-        case VIA_CX700:
-        case VIA_VX800:
-        case VIA_VX855:
-        case VIA_VX900:
-            ViaLVDSPower(pScrn, TRUE);
-            break;
-        }
-        ViaLCDPower(output, TRUE);
-        break;
-
-    case DPMSModeStandby:
-    case DPMSModeSuspend:
-    case DPMSModeOff:
-        switch (pVia->Chipset) {
-        case VIA_P4M900:
-        case VIA_CX700:
-        case VIA_VX800:
-        case VIA_VX855:
-        case VIA_VX900:
-            ViaLVDSPower(pScrn, FALSE);
-            break;
-        }
-        ViaLCDPower(output, FALSE);
-        break;
-    }
-}
-
-static void
-via_lvds_save(xf86OutputPtr output)
-{
-}
-
-static void
-via_lvds_restore(xf86OutputPtr output)
-{
-    ViaLCDPower(output, TRUE);
 }
 
 /*
@@ -527,73 +938,44 @@ ViaPanelGetSizeFromDDCv1(xf86OutputPtr output, int *width, int *height)
     return TRUE;
 }
 
-static Bool
-ViaGetResolutionIndex(ScrnInfoPtr pScrn, ViaPanelInfoPtr Panel,
-                      DisplayModePtr mode)
-{
-    int i;
-
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                     "ViaGetResolutionIndex: Looking for %dx%d\n",
-                     mode->CrtcHDisplay, mode->CrtcVDisplay));
-    for (i = 0; ViaResolutionTable[i].Index != VIA_RES_INVALID; i++) {
-        if ((ViaResolutionTable[i].X == mode->CrtcHDisplay)
-            && (ViaResolutionTable[i].Y == mode->CrtcVDisplay)) {
-            Panel->ResolutionIndex = ViaResolutionTable[i].Index;
-            DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "ViaGetResolutionIndex:"
-                             " %d\n", Panel->ResolutionIndex));
-            return TRUE;
-        }
-    }
-
-    Panel->ResolutionIndex = VIA_RES_INVALID;
-    return FALSE;
-}
-
 /*
  * Gets the native panel resolution from scratch pad registers.
  */
 static void
-ViaPanelGetNativeModeFromScratchPad(xf86OutputPtr output)
+viaLVDSGetFPInfoFromScratchPad(xf86OutputPtr output)
 {
-    ViaPanelInfoPtr panel = output->driver_private;
     ScrnInfoPtr pScrn = output->scrn;
     vgaHWPtr hwp = VGAHWPTR(pScrn);
+    ViaPanelInfoPtr panel = output->driver_private;
     CARD8 index;
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                     "ViaPanelGetNativeModeFromScratchPad\n"));
+                     "Entered viaLVDSGetFPInfoFromScratchPad.\n"));
 
     index = hwp->readCrtc(hwp, 0x3F) & 0x0F;
 
     panel->NativeModeIndex = index;
     panel->NativeWidth = ViaPanelNativeModes[index].Width;
     panel->NativeHeight = ViaPanelNativeModes[index].Height;
+    panel->useDualEdge = ViaPanelNativeModes[index].useDualEdge;
+    panel->useDithering = ViaPanelNativeModes[index].useDithering;
+
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-               "Native Panel Resolution is %dx%d\n",
+               "VIA Technologies VGA BIOS Scratch Pad Register "
+               "Flat Panel Index: %d\n",
+               panel->NativeModeIndex);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+               "Flat Panel Native Resolution: %dx%d\n",
                panel->NativeWidth, panel->NativeHeight);
-}
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+               "Flat Panel Dual Edge Transfer: %s\n",
+               panel->useDualEdge ? "On" : "Off");
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+               "Flat Panel Output Color Dithering: %s\n",
+               panel->useDithering ? "On (18 bit)" : "Off (24 bit)");
 
-static int
-via_lvds_mode_valid(xf86OutputPtr output, DisplayModePtr pMode)
-{
-    ScrnInfoPtr pScrn = output->scrn;
-    VIAPtr pVia = VIAPTR(pScrn);
-
-    ViaPanelInfoPtr Panel = output->driver_private;
-
-    if (Panel->NativeWidth < pMode->HDisplay ||
-        Panel->NativeHeight < pMode->VDisplay)
-        return MODE_PANEL;
-
-    if (!Panel->Scale && Panel->NativeHeight != pMode->VDisplay &&
-         Panel->NativeWidth != pMode->HDisplay)
-        return MODE_PANEL;
-
-    if (!ViaModeDotClockTranslate(pScrn, pMode))
-        return MODE_NOCLOCK;
-
-    return MODE_OK;
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                     "Exiting viaLVDSGetFPInfoFromScratchPad.\n"));
 }
 
 static void
@@ -625,47 +1007,6 @@ ViaPanelCenterMode(DisplayModePtr mode, DisplayModePtr adjusted_mode)
     adjusted_mode->CrtcVBlankEnd = adjusted_mode->CrtcVTotal - vBorder;
     adjusted_mode->CrtcVSyncStart = adjusted_mode->VSyncStart;
     adjusted_mode->CrtcVSyncEnd = adjusted_mode->VSyncEnd;
-}
-
-static Bool
-via_lvds_mode_fixup(xf86OutputPtr output, DisplayModePtr mode,
-					DisplayModePtr adjusted_mode)
-{
-    ViaPanelInfoPtr Panel = output->driver_private;
-
-    xf86SetModeCrtc(adjusted_mode, 0);
-    if (!Panel->Center && (mode->HDisplay < Panel->NativeWidth ||
-        mode->VDisplay < Panel->NativeHeight)) {
-        Panel->Scale = TRUE;
-    } else {
-        Panel->Scale = FALSE;
-        ViaPanelCenterMode(mode, adjusted_mode);
-    }
-    return TRUE;
-}
-
-static void
-via_lvds_prepare(xf86OutputPtr output)
-{
-    via_lvds_dpms(output, DPMSModeOff);
-
-    if (output->crtc) {
-        drmmode_crtc_private_ptr iga = output->crtc->driver_private;
-        CARD8 value = 0x00; /* Value for IGA 1 */
-        ScrnInfoPtr pScrn = output->scrn;
-        vgaHWPtr hwp = VGAHWPTR(pScrn);
-
-        /* IGA 2 */
-        if (iga->index)
-            value = 0x10;
-        ViaCrtcMask(hwp, 0x99, value, value);
-    }
-}
-
-static void
-via_lvds_commit(xf86OutputPtr output)
-{
-    via_lvds_dpms(output, DPMSModeOn);
 }
 
 static void
@@ -771,116 +1112,224 @@ ViaPanelScaleDisable(ScrnInfoPtr pScrn)
 }
 
 static void
-via_lvds_mode_set(xf86OutputPtr output, DisplayModePtr mode,
-					DisplayModePtr adjusted_mode)
+via_lvds_create_resources(xf86OutputPtr output)
 {
-    ViaPanelInfoPtr Panel = output->driver_private;
+}
+
+static void
+via_lvds_dpms(xf86OutputPtr output, int mode)
+{
     ScrnInfoPtr pScrn = output->scrn;
     VIAPtr pVia = VIAPTR(pScrn);
 
-    if (Panel->Scale) {
-        ViaPanelScale(pScrn, mode->HDisplay, mode->VDisplay,
-                        Panel->NativeWidth,
-                        Panel->NativeHeight);
-    } else {
-        ViaPanelScaleDisable(pScrn);
+    switch (mode) {
+    case DPMSModeOn:
+        switch (pVia->Chipset) {
+        case VIA_PM800:
+        case VIA_P4M800PRO:
+        case VIA_P4M890:
+        case VIA_K8M890:
+        case VIA_P4M900:
+        case VIA_CX700:
+        case VIA_VX800:
+        case VIA_VX855:
+        case VIA_VX900:
+            ViaLVDSPower(pScrn, TRUE);
+            break;
+        default:
+            ViaLCDPower(output, TRUE);
+            break;
+        }
+
+        viaFPIOPadSetting(pScrn, TRUE);
+        break;
+
+    case DPMSModeStandby:
+    case DPMSModeSuspend:
+    case DPMSModeOff:
+        switch (pVia->Chipset) {
+        case VIA_PM800:
+        case VIA_P4M800PRO:
+        case VIA_P4M890:
+        case VIA_K8M890:
+        case VIA_P4M900:
+        case VIA_CX700:
+        case VIA_VX800:
+        case VIA_VX855:
+        case VIA_VX900:
+            ViaLVDSPower(pScrn, FALSE);
+            break;
+        default:
+            ViaLCDPower(output, FALSE);
+            break;
+        }
+
+        viaFPIOPadSetting(pScrn, FALSE);
+        break;
     }
 }
 
-static int
-ViaPanelLookUpModeIndex(int width, int height)
+static void
+via_lvds_save(xf86OutputPtr output)
 {
-    int i, index = VIA_PANEL_INVALID;
-    int length = sizeof(ViaPanelNativeModes) / sizeof(ViaPanelModeRec);
+}
+
+static void
+via_lvds_restore(xf86OutputPtr output)
+{
+    ViaLCDPower(output, TRUE);
+}
+
+static int
+via_lvds_mode_valid(xf86OutputPtr output, DisplayModePtr pMode)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    ViaPanelInfoPtr Panel = output->driver_private;
+
+    if (Panel->NativeWidth < pMode->HDisplay ||
+        Panel->NativeHeight < pMode->VDisplay)
+        return MODE_PANEL;
+
+    if (!Panel->Scale && Panel->NativeHeight != pMode->VDisplay &&
+         Panel->NativeWidth != pMode->HDisplay)
+        return MODE_PANEL;
+
+    if (!ViaModeDotClockTranslate(pScrn, pMode))
+        return MODE_NOCLOCK;
+
+    return MODE_OK;
+}
+
+static Bool
+via_lvds_mode_fixup(xf86OutputPtr output, DisplayModePtr mode,
+                    DisplayModePtr adjusted_mode)
+{
+    ViaPanelInfoPtr Panel = output->driver_private;
+
+    xf86SetModeCrtc(adjusted_mode, 0);
+    if (!Panel->Center && (mode->HDisplay < Panel->NativeWidth ||
+        mode->VDisplay < Panel->NativeHeight)) {
+        Panel->Scale = TRUE;
+    } else {
+        Panel->Scale = FALSE;
+        ViaPanelCenterMode(mode, adjusted_mode);
+    }
+    return TRUE;
+}
+
+static void
+via_lvds_prepare(xf86OutputPtr output)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+
+    via_lvds_dpms(output, DPMSModeOff);
+    viaFPIOPadSetting(pScrn, FALSE);
+}
+
+static void
+via_lvds_commit(xf86OutputPtr output)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+
+    via_lvds_dpms(output, DPMSModeOn);
+    viaFPIOPadSetting(pScrn, TRUE);
+}
+
+static void
+via_lvds_mode_set(xf86OutputPtr output, DisplayModePtr mode,
+                    DisplayModePtr adjusted_mode)
+{
+    ViaPanelInfoPtr Panel = output->driver_private;
+    ScrnInfoPtr pScrn = output->scrn;
+    drmmode_crtc_private_ptr iga = output->crtc->driver_private;
+    VIAPtr pVia = VIAPTR(pScrn);
+
+    if (output->crtc) {
+        if (Panel->Scale) {
+            ViaPanelScale(pScrn, mode->HDisplay, mode->VDisplay,
+                            Panel->NativeWidth,
+                            Panel->NativeHeight);
+        } else {
+            ViaPanelScaleDisable(pScrn);
+        }
+
+        switch (pVia->Chipset) {
+        case VIA_P4M900:
+            viaDFPLowSetDelayTap(pScrn, 0x08);
+            break;
+        case VIA_CX700:
+            viaLVDS2SetDelayTap(pScrn, 0x01);
+            break;
+        default:
+            break;
+        }
 
 
-    for (i = 0; i < length; i++) {
-        if (ViaPanelNativeModes[i].Width == width
-            && ViaPanelNativeModes[i].Height == height) {
-            index = i;
+        switch (pVia->Chipset) {
+        case VIA_KM400:
+        case VIA_K8M800:
+        case VIA_PM800:
+        case VIA_P4M800PRO:
+            viaDFPLowSetDisplaySource(pScrn, iga->index ? 0x01 : 0x00);
+            viaDFPHighSetDisplaySource(pScrn, iga->index ? 0x01 : 0x00);
+            break;
+        case VIA_P4M890:
+        case VIA_K8M890:
+        case VIA_P4M900:
+            viaDFPLowSetDisplaySource(pScrn, iga->index ? 0x01 : 0x00);
+            viaDVP1SetDisplaySource(pScrn, iga->index ? 0x01 : 0x00);
+            break;
+        case VIA_CX700:
+        case VIA_VX800:
+        case VIA_VX855:
+        case VIA_VX900:
+            viaLVDS2SetDisplaySource(pScrn, iga->index ? 0x01 : 0x00);
+
+            /* Set LVDS2 output color dithering. */
+            viaLVDS2SetDithering(pScrn, Panel->useDithering ? TRUE : FALSE);
+
+            /* Set LVDS2 output format to sequential mode. */
+            viaLVDS2SetOutputFormat(pScrn, 0x01);
+
+            /* Set LVDS2 output to OPENLDI mode. */
+            viaLVDS2SetFormat(pScrn, 0x01);
+            break;
+        default:
             break;
         }
     }
-    return index;
 }
 
 static xf86OutputStatus
 via_lvds_detect(xf86OutputPtr output)
 {
     xf86OutputStatus status = XF86OutputStatusDisconnected;
-    ViaPanelInfoPtr panel = output->driver_private;
     ScrnInfoPtr pScrn = output->scrn;
     VIAPtr pVia = VIAPTR(pScrn);
-    vgaHWPtr hwp = VGAHWPTR(pScrn);
-    CARD8 cr3b = 0x00;
-    CARD8 cr3b_mask = 0x00;
+    ViaPanelInfoPtr panel = output->driver_private;
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered via_lvds_detect.\n"));
 
-    /* Hardcode panel size for the XO */
+    /* Hardcode panel size for the OLPC XO-1.5. */
     if (pVia->IsOLPCXO15) {
+        xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                    "Setting up OLPC XO-1.5 flat panel.\n");
         panel->NativeWidth = 1200;
         panel->NativeHeight = 900;
         status = XF86OutputStatusConnected;
-        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                            "Setting up OLPC XO-1.5 flat panel.\n"));
-        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                            "Detected Flat Panel Screen Resolution: "
-                            "%dx%d\n",
-                            panel->NativeWidth, panel->NativeHeight));
-        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                            "Exiting via_lvds_detect.\n"));
-        return status;
+        goto exit;
     }
 
-    if (!panel->NativeWidth || !panel->NativeHeight) {
-        int width, height;
-        Bool ret;
+    /* For now, FP detection code will not scan the I2C bus
+     * in order to obtain EDID since it is often used by DVI
+     * as well. Hence, reading off the CRTC scratch pad register
+     * supplied by the VGA BIOS is the only method available
+     * to figure out the FP native screen resolution. */
+    viaLVDSGetFPInfoFromScratchPad(output);
+    status = XF86OutputStatusConnected;
 
-        ret = ViaPanelGetSizeFromDDCv1(output, &width, &height);
-        if (ret) {
-            panel->NativeModeIndex = ViaPanelLookUpModeIndex(width, height);
-            DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                                "ViaPanelLookUpModeIndex: Width %d, "
-                                "Height %d, NativeModeIndex%d\n", 
-                                width, height, panel->NativeModeIndex));
-            if (panel->NativeModeIndex != VIA_PANEL_INVALID) {
-                panel->NativeWidth = width;
-                panel->NativeHeight = height;
-                status = XF86OutputStatusConnected;
-            }
-        } else {
-            /* Apparently this is the way VIA Technologies passes */
-            /* the presence of a flat panel to the device driver */
-            /* via BIOS setup. */
-            if (pVia->Chipset == VIA_CLE266) {
-                cr3b_mask = 0x08;
-            } else {
-                cr3b_mask = 0x02;
-            }            
-
-            cr3b = hwp->readCrtc(hwp, 0x3B) & cr3b_mask;
-
-            if (cr3b) {
-                ViaPanelGetNativeModeFromScratchPad(output);
-
-                if (panel->NativeWidth && panel->NativeHeight) {
-                    status = XF86OutputStatusConnected;
-                }
-            }
-        }
-
-        if (status == XF86OutputStatusConnected) {
-            DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                                "Detected Flat Panel Screen Resolution: "
-                                "%dx%d\n",
-                                panel->NativeWidth, panel->NativeHeight));
-        }
-    } else {
-        status = XF86OutputStatusConnected;
-    }
-
+exit:
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Exiting via_lvds_detect.\n"));
     return status;
@@ -947,6 +1396,21 @@ via_lvds_get_modes(xf86OutputPtr output)
     return pDisplay_Mode;
 }
 
+#ifdef RANDR_12_INTERFACE
+static Bool
+via_lvds_set_property(xf86OutputPtr output, Atom property,
+                        RRPropertyValuePtr value)
+{
+    return FALSE;
+}
+
+static Bool
+via_lvds_get_property(xf86OutputPtr output, Atom property)
+{
+    return FALSE;
+}
+#endif
+
 static void
 via_lvds_destroy(xf86OutputPtr output)
 {
@@ -957,12 +1421,6 @@ via_lvds_destroy(xf86OutputPtr output)
 
 static const xf86OutputFuncsRec via_lvds_funcs = {
     .create_resources   = via_lvds_create_resources,
-#ifdef RANDR_12_INTERFACE
-    .set_property       = via_lvds_set_property,
-#endif
-#ifdef RANDR_13_INTERFACE
-    .get_property       = via_lvds_get_property,
-#endif
     .dpms               = via_lvds_dpms,
     .save               = via_lvds_save,
     .restore            = via_lvds_restore,
@@ -973,7 +1431,13 @@ static const xf86OutputFuncsRec via_lvds_funcs = {
     .mode_set           = via_lvds_mode_set,
     .detect             = via_lvds_detect,
     .get_modes          = via_lvds_get_modes,
-    .destroy            = via_lvds_destroy,
+#ifdef RANDR_12_INTERFACE
+    .set_property       = via_lvds_set_property,
+#endif
+#ifdef RANDR_13_INTERFACE
+    .get_property       = via_lvds_get_property,
+#endif
+    .destroy            = via_lvds_destroy
 };
 
 
@@ -983,12 +1447,12 @@ via_lvds_init(ScrnInfoPtr pScrn)
     ViaPanelInfoPtr Panel = (ViaPanelInfoPtr) xnfcalloc(sizeof(ViaPanelInfoRec), 1);
     OptionInfoPtr  Options = xnfalloc(sizeof(ViaPanelOptions));
     MessageType from = X_DEFAULT;
-    const char *s = NULL;
     VIAPtr pVia = VIAPTR(pScrn);
     xf86OutputPtr output = NULL;
     vgaHWPtr hwp = VGAHWPTR(pScrn);
     CARD8 cr3b = 0x00;
     CARD8 cr3b_mask = 0x00;
+    char outputNameBuffer[32];
 
     if (!Panel)
         return;
@@ -1020,18 +1484,26 @@ via_lvds_init(ScrnInfoPtr pScrn)
     xf86DrvMsg(pScrn->scrnIndex, from, "LVDS-0 : DVI Center is %s.\n",
                Panel->Center ? "enabled" : "disabled");
 
-    output = xf86OutputCreate(pScrn, &via_lvds_funcs, "LVDS-1");
+    /* The code to dynamically designate a particular FP (i.e., FP-1,
+     * FP-2, etc.) for xrandr was borrowed from xf86-video-r128 DDX. */
+    sprintf(outputNameBuffer, "FP-%d", (pVia->numberFP + 1));
+    output = xf86OutputCreate(pScrn, &via_lvds_funcs, outputNameBuffer);
 
     if (output)  {
         output->driver_private = Panel;
 
-        if (pVia->Chipset == VIA_VX900)
-            output->possible_crtcs = 0x3;
-        else
-            output->possible_crtcs = 0x2;
+        /* While there are two (2) display controllers registered with the
+         * X.Org Server, it is often desirable to fix FP (Flat Panel) to
+         * IGA2 since only IGA2 contains panel resolution scaling
+         * functionality. IGA1 does not have this. */
+        output->possible_crtcs = 1 << 1;
+
         output->possible_clones = 0;
         output->interlaceAllowed = FALSE;
         output->doubleScanAllowed = FALSE;
+
+        /* Increment the number of FP connectors. */
+        pVia->numberFP++;
 
         if (pVia->IsOLPCXO15) {
             output->mm_height = 152;
