@@ -5,6 +5,8 @@ xserver-xorg-video-openchrome (1:0.6.0-1) UNRELEASED; urgency=medium
      No really need to have higher version.
   * Install the upstream README file.
   * Install the true upstream changelog file: NEWS instead ChangLog.
+  * Drop Fix_spelling_error.patch and Reproducible_build.patch:
+     applied upstream.
 
  -- Dylan Aïssi <bob.dybian@gmail.com>  Tue, 07 Mar 2017 23:24:19 +0100
 
