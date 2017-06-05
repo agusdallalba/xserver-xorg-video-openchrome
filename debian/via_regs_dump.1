@@ -1,0 +1,40 @@
+.\"
+.TH VIA_REGS_DUMP 1 "June 2017" ""
+.SH NAME
+via_regs_dump \- tool for debugging the OpenChrome (VIA) graphics driver
+.SH SYNOPSIS
+.B via_regs_dump
+[\fIoptions\fR]
+.SH DESCRIPTION
+The Openchrome project is committed to providing and supporting fully
+free and Open Source drivers that take full advantage of the hardware
+acceleration of VIA chipsets featuring the VIA UniChrome, UniChrome
+Pro and Chrome9 integrated graphics processors. 
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display this usage message.
+.TP
+\fB\-d\fR, \fB\-\-dump\fR
+Dump all registers.
+.TP
+\fB\-p\fR, \fB\-\-pll\fR
+Display PLL.
+.TP
+\fB\-m\fR, \fB\-\-mode\fR
+Display modes.
+.TP
+\fB\-r\fR, \fB\-\-read\fR
+Read register. Example : $0 -r 3d5.17
+.TP
+\fB\-w\fR, \fB\-\-write\fR
+Write register. Example : $0 -w 3d5.17 0xa3
+.TP
+\fB\-g\fR, \fB\-\-gpio\fR
+Display GPIO state.
+.PP
+.SH SEE ALSO
+.BR https://www.freedesktop.org/wiki/Openchrome/
+.SH COPYRIGHT
+via-chrome-tool (C) 2009 by VIA Technologies, Inc.
+This is FREE SOFTWARE with ABSOLUTELY NO WARRANTY
