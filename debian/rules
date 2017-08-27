@@ -3,8 +3,13 @@
 DEB_CONFIGURE_EXTRA_FLAGS := \
 	--disable-maintainer-mode \
 	--disable-dependency-tracking \
-	--libdir=/usr/lib \
+	--libdir=/usr/lib
+
+# The via_regs_dump tool FTBFS on Hurd
+ifneq ($(DEB_HOST_ARCH_OS), hurd)
+DEB_CONFIGURE_EXTRA_FLAGS += \
 	--enable-viaregtool
+endif
 
 ifneq (,$(filter debug,$(DEB_BUILD_OPTIONS)))
 DEB_CONFIGURE_EXTRA_FLAGS += \

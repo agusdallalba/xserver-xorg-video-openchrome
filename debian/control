@@ -51,7 +51,7 @@ Description: X.Org X server -- VIA display driver
  and open-source drivers is to use this version of the driver.
 
 Package: openchrome-tool
-Architecture: amd64 hurd-i386 i386 kfreebsd-amd64 kfreebsd-i386 x32
+Architecture: amd64 i386 kfreebsd-amd64 kfreebsd-i386 x32
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
