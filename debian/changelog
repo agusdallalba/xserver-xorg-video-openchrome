@@ -1,6 +1,7 @@
 xserver-xorg-video-openchrome (1:0.6.0-3) UNRELEASED; urgency=medium
 
   * Disable the building of via_regs_dump on Hurd because FTBFS.
+     (Closes: #873463).
 
  -- Dylan Aïssi <dylan@Dell>  Sun, 27 Aug 2017 23:22:05 +0200
 
