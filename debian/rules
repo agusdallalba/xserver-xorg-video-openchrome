@@ -1,5 +1,7 @@
 #!/usr/bin/make -f
 
+include /usr/share/dpkg/pkg-info.mk
+
 DEB_CONFIGURE_EXTRA_FLAGS := \
 	--disable-maintainer-mode \
 	--disable-dependency-tracking \
@@ -48,7 +50,5 @@ override_dh_strip:
 %:
 	dh $@ --with quilt,xsf --builddirectory=build/
 
-gentarball: SOURCE=xserver-xorg-video-openchrome
-gentarball: UV=$(shell dpkg-parsechangelog|awk '/^Version:/ {print $$2}'|sed 's/^[0-9]*://;s/-.*$$//')
 gentarball:
-	git archive --format=tar upstream-unstable --prefix=$(SOURCE)-$(UV)/ | gzip -9 > ../$(SOURCE)_$(UV).orig.tar.gz
+	git archive --format=tar upstream-unstable --prefix=$(DEB_SOURCE)-$(DEB_VERSION_UPSTREAM)/ | gzip -9 > ../$(DEB_SOURCE)_$(DEB_VERSION_UPSTREAM).orig.tar.gz

@@ -5,6 +5,7 @@ xserver-xorg-video-openchrome (1:0.6.0-3) UNRELEASED; urgency=medium
   * Update descriptions of binary packages.
   * Install manpage of via_regs_dump in right section (from .1 to .8).
   * Really adopt the package (Closes: #808784).
+  * Do not explicitly parse d/changelog.
 
  -- Dylan Aïssi <bob.dybian@gmail.com>  Fri, 01 Sep 2017 23:30:17 +0200
 
