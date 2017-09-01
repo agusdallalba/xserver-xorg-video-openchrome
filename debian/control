@@ -36,19 +36,15 @@ Depends:
  ${xviddriver:Depends}
 Provides:
  ${xviddriver:Provides}
-Description: X.Org X server -- VIA display driver
- OpenChrome is a project for the development of free and open-source drivers
- for the VIA UniChrome video chipsets.
+Description: X.Org X server -- OpenChrome display driver
+ This package provides the 'openchrome' driver for the VIA Technologies
+ UniChrome and Chrome9 IGPs chipsets. The following chips should be
+ supported: CLE266, KM400(A), KN400(A), P4M800, K8M800, K8N800, PM800,
+ PN800, PM880, CN333, CN400, P4M800 Pro, VN800, CN700, CX700, VX700,
+ P4M890, VN890, CN800, K8M890, K8N890, P4M900, VN896, CN896, VX800, VX820,
+ VX855, VX875, VX900.
  .
- Originally called the 'snapshot' release, since it was a snapshot of an
- experimental branch of the unichrome cvs code, this is a continued development
- of the open source unichrome driver (from http://unichrome.sf.net) which
- also incorporates support for the unichrome-pro chipsets.
- .
- Support for hardware acceleration (XvMC) for all chipsets has subsequently
- been ripped out of the unichrome.sf.net driver. Therefore your only option if
- you wish to make use of the acceleration features of your VIA chip with free
- and open-source drivers is to use this version of the driver.
+ This package is built from the FreeDesktop.org xf86-video-openchrome driver.
 
 Package: openchrome-tool
 Architecture: amd64 i386 kfreebsd-amd64 kfreebsd-i386 x32
@@ -56,5 +52,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  xserver-xorg-video-openchrome (= ${binary:Version})
-Description: tool for debugging the OpenChrome (VIA) graphics driver
- via_regs_dump is a registers dumper tool for debugging the driver.
+Description: Tool for debugging the OpenChrome display driver
+ via_regs_dump is a registers dumper tool for debugging the OpenChrome driver.
+ This tool can read and write registers and display some others information
+ useful for debugging the driver.
