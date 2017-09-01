@@ -23,7 +23,7 @@ Build-Depends:
  xutils-dev
 Build-Conflicts:
  autoconf2.13
-Standards-Version: 4.0.0
+Standards-Version: 4.1.0
 Homepage: https://www.freedesktop.org/wiki/Openchrome/
 Vcs-Git: https://anonscm.debian.org/git/pkg-xorg/driver/xserver-xorg-video-openchrome.git
 Vcs-Browser: https://anonscm.debian.org/git/pkg-xorg/driver/xserver-xorg-video-openchrome.git
