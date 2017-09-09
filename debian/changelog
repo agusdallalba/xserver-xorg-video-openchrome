@@ -1,5 +1,8 @@
-xserver-xorg-video-openchrome (1:0.6.0-3) UNRELEASED; urgency=medium
+xserver-xorg-video-openchrome (1:0.6.0-3) unstable; urgency=medium
 
+  * Team upload.
+
+  [ Dylan Aïssi ]
   * Disable the building of via_regs_dump on Hurd because FTBFS.
      (Closes: #873463).
   * Update descriptions of binary packages.
@@ -8,7 +11,7 @@ xserver-xorg-video-openchrome (1:0.6.0-3) UNRELEASED; urgency=medium
   * Do not explicitly parse d/changelog.
   * Bump Standards-Version to 4.1.0.
 
- -- Dylan Aïssi <bob.dybian@gmail.com>  Fri, 01 Sep 2017 23:30:17 +0200
+ -- Julien Cristau <jcristau@debian.org>  Sat, 09 Sep 2017 18:25:22 +0200
 
 xserver-xorg-video-openchrome (1:0.6.0-2) unstable; urgency=medium
 
