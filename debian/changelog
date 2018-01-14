@@ -131,7 +131,7 @@ xserver-xorg-video-openchrome (1:0.2.904+svn1050-1) unstable; urgency=low
     + 933: MSI PM9M-V (reported by Florin Rentea)
     + 1014: Hewlett Packard DX2020
     + 1037: ASRock PV530
-    + 1050: Handle X server 1.12 (videoabi 12) (patch from Adam Jackson)  
+    + 1050: Handle X server 1.12 (videoabi 12) (patch from Adam Jackson)
 
  -- Julien Viard de Galbert <julien@vdg.blogsite.org>  Sun, 12 Feb 2012 20:19:22 +0100
 
@@ -282,7 +282,7 @@ xserver-xorg-video-openchrome (1:0.2.904+svn842-1) unstable; urgency=low
   * Fix watch file not to accept 'latest' as upstream version
 
   [ Christopher James Halse Rogers ]
-  * Update xsfbs to fix build against xserver-xorg >= 1.7.6.901-1 and use new 
+  * Update xsfbs to fix build against xserver-xorg >= 1.7.6.901-1 and use new
     substvars in debian/control.
 
   [ Julien Viard de Galbert ]
