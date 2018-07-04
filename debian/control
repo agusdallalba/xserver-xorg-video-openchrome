@@ -25,8 +25,8 @@ Build-Conflicts:
  autoconf2.13
 Standards-Version: 4.1.0
 Homepage: https://www.freedesktop.org/wiki/Openchrome/
-Vcs-Git: https://anonscm.debian.org/git/pkg-xorg/driver/xserver-xorg-video-openchrome.git
-Vcs-Browser: https://anonscm.debian.org/git/pkg-xorg/driver/xserver-xorg-video-openchrome.git
+Vcs-Git: https://salsa.debian.org/xorg-team/driver/xserver-xorg-video-openchrome.git
+Vcs-Browser: https://salsa.debian.org/xorg-team/driver/xserver-xorg-video-openchrome
 
 Package: xserver-xorg-video-openchrome
 Architecture: amd64 hurd-i386 i386 kfreebsd-amd64 kfreebsd-i386 x32
