@@ -5,21 +5,21 @@ Source: https://xorg.freedesktop.org/releases/individual/driver/
 
 Files: *
 Copyright: 1998-1999 Precision Insight, Inc., Cedar Park, Texas.
-	   2000 VA Linux Systems, Inc.
-	   1998-2003 VIA Technologies, Inc. All Rights Reserved.
-	   2000 Intel Corporation. All rights reserved.
-	   2001-2003 S3 Graphics, Inc. All Rights Reserved.
-	   2003 Red Hat, Inc. All Rights Reserved.
-	   2004-2005 The Unichrome Project. All rights reserved.
-	   2004-2006 Andreas Robinson. All Rights Reserved.
-	   2004-2006 Bernhard Rosenkraenzer. All Rights Reserved.
-	   2004-2006 Ivor Hewitt. All Rights Reserved.
-	   2004-2006 Luc Verhaegen. All Rights Reserved.
-	   2004-2006 Terry Barnaby. All Rights Reserved.
-	   2004-2006 Thomas Hellstrom. All Rights Reserved.
-	   2007-2008 Gabriel Mansi.
-	   2005-2016 The OpenChrome Project
-	   2015-2016 Kevin Brace
+           2000 VA Linux Systems, Inc.
+           1998-2003 VIA Technologies, Inc. All Rights Reserved.
+           2000 Intel Corporation. All rights reserved.
+           2001-2003 S3 Graphics, Inc. All Rights Reserved.
+           2003 Red Hat, Inc. All Rights Reserved.
+           2004-2005 The Unichrome Project. All rights reserved.
+           2004-2006 Andreas Robinson. All Rights Reserved.
+           2004-2006 Bernhard Rosenkraenzer. All Rights Reserved.
+           2004-2006 Ivor Hewitt. All Rights Reserved.
+           2004-2006 Luc Verhaegen. All Rights Reserved.
+           2004-2006 Terry Barnaby. All Rights Reserved.
+           2004-2006 Thomas Hellstrom. All Rights Reserved.
+           2007-2008 Gabriel Mansi.
+           2005-2016 The OpenChrome Project
+           2015-2016 Kevin Brace
 License: Expat
  Permission is hereby granted, free of charge, to any person obtaining a
  copy of this software and associated documentation files (the "Software"),
@@ -42,9 +42,9 @@ License: Expat
 
 Files: debian/*
 Copyright: Eric Work <work.eric@gmail.com>
-	   2007 Mario Limonciello <superm1@ubuntu.com>
-	   2007-2008 Raphael Geissert <atomo64@gmail.com>
-	   2010-2015 Julien Viard de Galbert <julien@vdg.blogsite.org>
+           2007 Mario Limonciello <superm1@ubuntu.com>
+           2007-2008 Raphael Geissert <atomo64@gmail.com>
+           2010-2015 Julien Viard de Galbert <julien@vdg.blogsite.org>
 License: GPL-3+
  This packaging is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public
