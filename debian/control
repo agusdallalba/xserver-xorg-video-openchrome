@@ -2,7 +2,7 @@ Source: xserver-xorg-video-openchrome
 Section: x11
 Priority: optional
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
-Uploaders: Dylan Aïssi <bob.dybian@gmail.com>
+Uploaders: Dylan Aïssi <daissi@debian.org>
 Build-Depends:
  debhelper (>= 10),
  libdrm-dev (>> 2.0) [!hurd-any],
