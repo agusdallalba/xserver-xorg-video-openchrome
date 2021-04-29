@@ -32,7 +32,7 @@
 #define __OPENCHROME_DRM_H__
 
 
-#include <drm/drm.h>
+#include <libdrm/drm.h>
 
 
 #if defined(__cplusplus)
