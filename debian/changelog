@@ -1,3 +1,9 @@
+xserver-xorg-video-openchrome (1:0.6.0.400-0) buster; urgency=medium
+
+  * Updated to git versoin
+
+ -- Agustín Dall Alba <agustin@dallalba.com.ar>  Thu, 29 Apr 2021 06:35:56 -0300
+
 xserver-xorg-video-openchrome (1:0.6.0-3) unstable; urgency=medium
 
   * Team upload.
