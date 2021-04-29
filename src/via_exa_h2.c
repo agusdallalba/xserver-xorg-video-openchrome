@@ -42,31 +42,6 @@
 #include "via_rop.h"
 
 /*
- * Emit clipping borders to the command buffer and update the 2D context
- * current command with clipping info.
- */
-static int
-viaAccelClippingHelper_H2(VIAPtr pVia, int refY)
-{
-    ViaTwodContext *tdc = &pVia->td;
-
-    RING_VARS;
-
-    if (tdc->clipping) {
-        refY = (refY < tdc->clipY1) ? refY : tdc->clipY1;
-        tdc->cmd |= VIA_GEC_CLIP_ENABLE;
-        BEGIN_RING(4);
-        OUT_RING_H1(VIA_REG_CLIPTL,
-                    ((tdc->clipY1 - refY) << 16) | tdc->clipX1);
-        OUT_RING_H1(VIA_REG_CLIPBR,
-		    ((tdc->clipY2 - refY) << 16) | tdc->clipX2);
-    } else {
-        tdc->cmd &= ~VIA_GEC_CLIP_ENABLE;
-    }
-    return refY;
-}
-
-/*
  * Check if we can use a planeMask and update the 2D context accordingly.
  */
 static Bool
@@ -262,6 +237,8 @@ viaExaCopy_H2(PixmapPtr pDstPixmap, int srcX, int srcY, int dstX, int dstY,
     VIAPtr pVia = VIAPTR(pScrn);
     ViaTwodContext *tdc = &pVia->td;
 
+    RING_VARS;
+
     if (!width || !height)
         return;
 
@@ -275,8 +252,6 @@ viaExaCopy_H2(PixmapPtr pDstPixmap, int srcX, int srcY, int dstX, int dstY,
         dstX += width - 1;
     }
     val = VIA_PITCH_ENABLE | (dstPitch >> 3) << 16 | (tdc->srcPitch >> 3);
-
-    RING_VARS;
 
     BEGIN_RING(16);
     OUT_RING_H1(VIA_REG_GEMODE, tdc->mode);
@@ -360,35 +335,6 @@ viaExaCheckComposite_H2(int op, PicturePtr pSrcPicture,
     viaExaPrintCompositeInfo("Src format not supported", op, pSrcPicture, pMaskPicture, pDstPicture);
 #endif
     return FALSE;
-}
-
-static Bool
-viaIsAGP(VIAPtr pVia, PixmapPtr pPix, unsigned long *offset)
-{
-#ifdef HAVE_DRI
-    unsigned long offs;
-
-    if (pVia->directRenderingType && !pVia->IsPCI) {
-        offs = ((unsigned long)pPix->devPrivate.ptr
-                - (unsigned long)pVia->agpMappedAddr);
-
-        if ((offs - pVia->scratchOffset) < pVia->agpSize) {
-            *offset = offs + pVia->agpAddr;
-            return TRUE;
-        }
-    }
-#endif
-    return FALSE;
-}
-
-static Bool
-viaExaIsOffscreen(PixmapPtr pPix)
-{
-    ScrnInfoPtr pScrn = xf86ScreenToScrn(pPix->drawable.pScreen);
-    VIAPtr pVia = VIAPTR(pScrn);
-
-    return ((unsigned long)pPix->devPrivate.ptr -
-            (unsigned long) drm_bo_map(pScrn, pVia->drmmode.front_bo)) < pVia->drmmode.front_bo->size;
 }
 
 Bool

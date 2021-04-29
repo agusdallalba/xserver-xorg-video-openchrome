@@ -36,7 +36,7 @@
 #include "xf86Pci.h"
 #include "regionstr.h"
 
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
 
 #include "via_drmclient.h"
 #include "via_drm.h"
@@ -59,6 +59,7 @@
 #include "dri.h"
 #include "via_xvpriv.h"
 #include "via_xv.h"
+#include "via_eng_regs.h"
 
 #define MAKE_ATOM(a) MakeAtom(a, strlen(a), TRUE)
 
@@ -69,7 +70,8 @@
  * to be added here to be supported also by XvMC.
  * Currently, only colorkey seems to be supported by Xv for Putimage.
  */
-static char *attrXvMC[VIA_NUM_XVMC_ATTRIBUTES] = { "XV_COLORKEY",
+static const char *attrXvMC[VIA_NUM_XVMC_ATTRIBUTES] = {
+    "XV_COLORKEY",
     "XV_AUTOPAINT_COLORKEY",
     "XV_BRIGHTNESS",
     "XV_CONTRAST",
@@ -342,7 +344,8 @@ ViaInitXVMC(ScreenPtr pScreen)
         xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
                    "[XvMC] Kernel drm version is %d.%d.%d; "
                    "at least version 2.4.0 is needed.\n",
-                   pVia->drmVerMajor, pVia->drmVerMinor, pVia->drmVerPL);
+                   pVia->drmVerMajor, pVia->drmVerMinor,
+                   pVia->drmVerPatchLevel);
         xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
                    "[XvMC] Please update. Disabling XvMC.\n");
         return;
@@ -502,7 +505,7 @@ ViaXvMCCreateContext(ScrnInfoPtr pScrn, XvMCContextPtr pContext,
     contextRec->chipId = pVia->ChipId;
     contextRec->screen = pScrn->scrnIndex;
     contextRec->depth = pScrn->bitsPerPixel;
-    contextRec->stride = pVia->Bpp * pScrn->virtualX;
+    contextRec->stride = pScrn->virtualX * (pScrn->bitsPerPixel >> 3);
 
     vXvMC->nContexts++;
     vXvMC->contexts[ctxNo] = pContext->context_id;
@@ -583,7 +586,7 @@ ViaXvMCCreateSurface(ScrnInfoPtr pScrn, XvMCSurfacePtr pSurf,
     ctx = pSurf->context;
     bufSize = size_yuv420(ctx->width, ctx->height);
     sPriv->memory_ref = drm_bo_alloc(pScrn, numBuffers * bufSize,
-                                    32, TTM_PL_FLAG_VRAM);
+                                    32, TTM_PL_VRAM);
     if (!sPriv->memory_ref) {
         free(*priv);
         free(sPriv);
@@ -602,8 +605,8 @@ ViaXvMCCreateSurface(ScrnInfoPtr pScrn, XvMCSurfacePtr pSurf,
     yBufSize = stride(ctx->width) * ctx->height;
     for (i = 0; i < numBuffers; ++i) {
         memset(buf, 0, yBufSize);
-        memset(buf + yBufSize, 0x80, yBufSize >> 1);
-        buf += bufSize;
+        memset((unsigned char*)buf + yBufSize, 0x80, yBufSize >> 1);
+        buf = (unsigned char*)buf + bufSize;
     }
     drm_bo_unmap(pScrn, sPriv->memory_ref);
 
@@ -660,7 +663,7 @@ ViaXvMCCreateSubpicture(ScrnInfoPtr pScrn, XvMCSubpicturePtr pSubp,
 
     ctx = pSubp->context;
     bufSize = size_xx44(ctx->width, ctx->height);
-    sPriv->memory_ref = drm_bo_alloc(pScrn, 1 * bufSize, 32, TTM_PL_FLAG_VRAM);
+    sPriv->memory_ref = drm_bo_alloc(pScrn, 1 * bufSize, 32, TTM_PL_VRAM);
     if (!sPriv->memory_ref) {
         free(*priv);
         free(sPriv);
@@ -683,7 +686,6 @@ ViaXvMCDestroyContext(ScrnInfoPtr pScrn, XvMCContextPtr pContext)
     VIAPtr pVia = VIAPTR(pScrn);
     ViaXvMCPtr vXvMC = &(pVia->xvmc);
     int i;
-    volatile ViaXvMCSAreaPriv *sAPriv;
     viaPortPrivPtr pPriv;
     XvPortRecPrivatePtr portPriv;
     ViaXvMCXVPriv *vx;
@@ -691,7 +693,6 @@ ViaXvMCDestroyContext(ScrnInfoPtr pScrn, XvMCContextPtr pContext)
     for (i = 0; i < VIA_XVMC_MAX_CONTEXTS; i++) {
         if (vXvMC->contexts[i] == pContext->context_id) {
 
-            sAPriv = (ViaXvMCSAreaPriv *) DRIGetSAREAPrivate(pScrn->pScreen);
             portPriv = (XvPortRecPrivatePtr) pContext->port_priv;
             pPriv = (viaPortPrivPtr) portPriv->DevPriv.ptr;
             vx = (ViaXvMCXVPriv *) pPriv->xvmc_priv;
@@ -994,4 +995,4 @@ viaXvMCPutImageSize(ScrnInfoPtr pScrn)
     return 0;
 }
 
-#endif /* HAVE_DRI */
+#endif /* OPENCHROMEDRI */

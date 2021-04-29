@@ -44,33 +44,85 @@
 
 
 /*
-	1. Formula:
-		2^13 X 0.0698uSec [1/14.318MHz] = 8192 X 0.0698uSec =572.1uSec
-		Timer = Counter x 572 uSec
-	2. Note:
-		0.0698 uSec is too small to compute for hardware. So we multiply a
-		reference value(2^13) to make it big enough to compute for hardware.
-	3. Note:
-		The meaning of the TD0~TD3 are count of the clock.
-		TD(sec) = (sec)/(per clock) x (count of clocks)
-*/
-#define TD0 200
-#define TD1 25
-#define TD2 0
-#define TD3 25
+ * Sets the polarity of horizontal synchronization and vertical
+ * synchronization.
+ */
+static void
+viaTMDSSyncPolarity(ScrnInfoPtr pScrn, unsigned int flags)
+{
+    CARD8 syncPolarity = 0x00;
 
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaTMDSSyncPolarity.\n"));
+
+    if (flags & V_NHSYNC) {
+        syncPolarity |= BIT(0);
+    }
+
+    if (flags & V_NVSYNC) {
+        syncPolarity |= BIT(1);
+    }
+
+    viaTMDSSetSyncPolarity(pScrn, syncPolarity);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "TMDS (DVI) Horizontal Sync Polarity: %s\n",
+                (syncPolarity & BIT(0)) ? "-" : "+");
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "TMDS (DVI) Vertical Sync Polarity: %s\n",
+                (syncPolarity & BIT(1)) ? "-" : "+");
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaTMDSSyncPolarity.\n"));
+}
+
+/*
+ * Sets TMDS (DVI) display source.
+ */
+static void
+viaTMDSDisplaySource(ScrnInfoPtr pScrn, int index)
+{
+    CARD8 displaySource = index;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaTMDSDisplaySource.\n"));
+
+    viaTMDSSetDisplaySource(pScrn, displaySource & 0x01);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "TMDS (DVI) Display Source: IGA%d\n",
+                (displaySource & 0x01) + 1);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaTMDSDisplaySource.\n"));
+}
 
 /*
  * Initializes most registers related to VIA Technologies IGP
  * integrated TMDS transmitter. Synchronization polarity and
  * display output source need to be set separately. */
 static void
-viaTMDSInitRegisters(ScrnInfoPtr pScrn)
+viaTMDSInitReg(ScrnInfoPtr pScrn)
 {
     vgaHWPtr hwp = VGAHWPTR(pScrn);
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Entered viaTMDSInitRegisters.\n"));
+                        "Entered viaTMDSInitReg.\n"));
+
+    /* Turn off hardware controlled FP power on / off circuit. */
+    viaFPSetPrimaryHardPower(pScrn, FALSE);
+
+    /* Use software FP power sequence control. */
+    viaFPSetPrimaryPowerSeqType(pScrn, FALSE);
+
+    /* Turn off software controlled primary FP power rails. */
+    viaFPSetPrimarySoftVDD(pScrn, FALSE);
+    viaFPSetPrimarySoftVEE(pScrn, FALSE);
+
+    /* Turn off software controlled primary FP back light
+     * control. */
+    viaFPSetPrimarySoftBackLight(pScrn, FALSE);
+
+    /* Turn off direct control of FP back light. */
+    viaFPSetPrimaryDirectBackLightCtrl(pScrn, FALSE);
 
     /* Activate DVI + LVDS2 mode. */
     /* 3X5.D2[5:4] - Display Channel Select
@@ -115,150 +167,36 @@ viaTMDSInitRegisters(ScrnInfoPtr pScrn)
     ViaSeqMask(hwp, 0x2B, 0x40, 0x40);
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Exiting viaTMDSInitRegisters.\n"));
+                        "Exiting viaTMDSInitReg.\n"));
 }
 
 /*
- * Sets the polarity of horizontal synchronization and vertical
- * synchronization.
+ * Sets integrated TMDS (DVI) monitor power state.
  */
-static void
-viaTMDSSetSyncPolarity(ScrnInfoPtr pScrn, DisplayModePtr mode)
-{
-    vgaHWPtr hwp = VGAHWPTR(pScrn);
-    CARD8 cr97;
-
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Entered viaTMDSSetSyncPolarity.\n"));
-
-    /* 3X5.97[6] - DVI (TMDS) VSYNC Polarity
-     *             0: Positive
-     *             1: Negative
-     * 3X5.97[5] - DVI (TMDS) HSYNC Polarity
-     *             0: Positive
-     *             1: Negative */
-    cr97 = hwp->readCrtc(hwp, 0x97);
-    if (mode->Flags & V_NHSYNC) {
-        cr97 |= 0x20;
-    } else {
-        cr97 &= (~0x20);
-    }
-
-    if (mode->Flags & V_NVSYNC) {
-        cr97 |= 0x40;
-    } else {
-        cr97 &= (~0x40);
-    }
-
-    ViaCrtcMask(hwp, 0x97, cr97, 0x60);
-
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Exiting viaTMDSSetSyncPolarity.\n"));
-}
-
-/*
- * Sets IGA1 or IGA2 as the display output source for VIA Technologies IGP
- * integrated TMDS transmitter.
- */
-static void
-viaTMDSSetSource(ScrnInfoPtr pScrn, CARD8 displaySource)
-{
-    vgaHWPtr hwp = VGAHWPTR(pScrn);
-    CARD8 temp = displaySource;
-
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Entered viaTMDSSetSource.\n"));
-
-    /* Set integrated TMDS transmitter display output source.
-     * The integrated TMDS transmitter appears to utilize LVDS1's data
-     * source selection bit (3X5.99[4]). */
-    /* 3X5.99[4] - LVDS Channel1 Data Source Selection
-     *             0: Primary Display
-     *             1: Secondary Display */
-    ViaCrtcMask(hwp, 0x99, temp << 4, 0x10);
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                "Integrated TMDS Transmitter Display Output Source: IGA%d\n",
-                (temp & 0x01) + 1);
-
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Exiting viaTMDSSetSource.\n"));
-}
-
-/*
- * Returns TMDS receiver detection state for VIA Technologies IGP
- * integrated TMDS transmitter.
- */
-static Bool
-viaTMDSSense(ScrnInfoPtr pScrn)
-{
-    vgaHWPtr hwp = VGAHWPTR(pScrn);
-    VIAPtr pVia = VIAPTR(pScrn);
-    CARD8 tmdsReceiverDetected = 0x00;
-
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Entered viaTMDSSense.\n"));
-
-    /* For now, faking DVI detection.*/
-    tmdsReceiverDetected = 0x01;
-
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                "Integrated TMDS transmitter %s a TMDS receiver.\n",
-                (tmdsReceiverDetected & 0x01) ? "detected" : "did not detect");
-
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Exiting viaTMDSSense.\n"));
-    return tmdsReceiverDetected;
-}
-
 static void
 viaTMDSPower(ScrnInfoPtr pScrn, Bool powerState)
 {
-    vgaHWPtr hwp = VGAHWPTR(pScrn);
-
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered viaTMDSPower.\n"));
 
     if (powerState) {
-        /* 3X5.91[7] - Software Direct On / Off Display Period
-                       in the Panel Path
-                       0: On
-                       1: Off */
-        ViaCrtcMask(hwp, 0x91, 0x00, 0x80);
+        viaFPSetPrimaryDirectDisplayPeriod(pScrn, TRUE);
 
-        /* 3X5.91[0] - Hardware or Software Control Power Sequence
-                       1: Software Control */
-        ViaCrtcMask(hwp, 0x91, 0x01, 0x01);
+        /* Turn on software controlled primary FP data transmission. */
+        viaFPSetPrimarySoftData(pScrn, TRUE);
 
-        usleep(TD0);
-
-        /* 3X5.91[4] - Software VDD On
-                       0: Off
-                       1: On */
-        ViaCrtcMask(hwp, 0x91, 0x10, 0x10);
-
-        usleep(TD1);
-
-        /* 3X5.91[3] - Software Data On
-                       0: Off
-                       1: On */
-        ViaCrtcMask(hwp, 0x91, 0x08, 0x08);
-
-        /* 3X5.D2[3] - Power Down (Active High) for DVI
-         *             0: TMDS power on
-         *             1: TMDS power down */
-        ViaCrtcMask(hwp, 0xD2, 0x00, 0x08);
+        viaTMDSSetPower(pScrn, TRUE);
     } else {
-        ViaCrtcMask(hwp, 0xD2, 0x08, 0x08);
+        viaTMDSSetPower(pScrn, FALSE);
 
-        ViaCrtcMask(hwp, 0x91, 0x00, 0x08);
+        /* Turn off software controlled primary FP data transmission. */
+        viaFPSetPrimarySoftData(pScrn, TRUE);
 
-        usleep(TD1);
-
-        ViaCrtcMask(hwp, 0x91, 0x00, 0x10);
+        viaFPSetPrimaryDirectDisplayPeriod(pScrn, FALSE);
     }
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                "Integrated TMDS (DVI) Power: %s\n",
+                "DVI Power: %s\n",
                 powerState ? "On" : "Off");
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
@@ -270,66 +208,90 @@ viaTMDSIOPadSetting(ScrnInfoPtr pScrn, Bool ioPadOn)
 {
     vgaHWPtr hwp = VGAHWPTR(pScrn);
     VIAPtr pVia = VIAPTR(pScrn);
-    CARD8 sr12, sr13, sr5a;
+    VIADisplayPtr pVIADisplay = pVia->pVIADisplay;
+    CARD8 sr13, sr5a;
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered viaTMDSIOPadSetting.\n"));
 
-    if ((pVia->Chipset == VIA_CX700)
-        || (pVia->Chipset == VIA_VX800)
-        || (pVia->Chipset == VIA_VX855)
-        || (pVia->Chipset == VIA_VX900)) {
-
-        sr5a = hwp->readSeq(hwp, 0x5A);
-        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                            "SR5A: 0x%02X\n", sr5a));
-        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                            "Setting 3C5.5A[0] to 0.\n"));
-        ViaSeqMask(hwp, 0x5A, sr5a & 0xFE, 0x01);
-    }
-
-    sr12 = hwp->readSeq(hwp, 0x12);
+    sr5a = hwp->readSeq(hwp, 0x5A);
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "SR12: 0x%02X\n", sr12));
+                        "SR5A: 0x%02X\n", sr5a));
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Setting 3C5.5A[0] to 0.\n"));
+    ViaSeqMask(hwp, 0x5A, sr5a & 0xFE, 0x01);
+
     sr13 = hwp->readSeq(hwp, 0x13);
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "SR13: 0x%02X\n", sr13));
 
-    switch (pVia->Chipset) {
-    case VIA_CX700:
-    case VIA_VX800:
-    case VIA_VX855:
-    case VIA_VX900:
-        /* 3C5.13[7:6] - DVP1D15 and DVP1D14 pin strappings
-         *               00: LVDS1 + LVDS2
-         *               01: DVI + LVDS2
-         *               10: Dual LVDS (LVDS1 + LVDS2 used 
-         *                   simultaneously)
-         *               11: DVI only */
-        if ((((~(sr13 & 0x80)) && (sr13 & 0x40))
-             || ((sr13 & 0x80) && (sr13 & 0x40)))
-           || (pVia->isVIANanoBook)) {
+    /*
+     * 3C5.13[7:6] - DVP1D15 and DVP1D14 pin strappings
+     *               00: LVDS1 + LVDS2
+     *               01: DVI + LVDS2
+     *               10: Dual LVDS (LVDS1 + LVDS2 used
+     *                   simultaneously)
+     *               11: DVI only
+     */
+    if ((((~(sr13 & BIT(7))) && (sr13 & BIT(6))) ||
+        ((sr13 & BIT(7)) && (sr13 & BIT(6)))) ||
+        (pVIADisplay->isVIANanoBook)) {
+        viaLVDS1SetIOPadSetting(pScrn, ioPadOn ? 0x03 : 0x00);
+    }
 
-            viaLVDS1SetIOPadSetting(pScrn, ioPadOn ? 0x03 : 0x00);
-        }
+    hwp->writeSeq(hwp, 0x5A, sr5a);
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Restoring 3C5.5A[0].\n"));
 
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaTMDSIOPadSetting.\n"));
+}
+
+void
+viaExtTMDSIOPadState(ScrnInfoPtr pScrn, uint32_t diPort, Bool ioPadOn)
+{
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered %s.\n", __func__));
+
+    switch(diPort) {
+    case VIA_DI_PORT_DVP0:
+        viaDVP0SetIOPadState(pScrn, ioPadOn ? 0x03 : 0x00);
+        break;
+    case VIA_DI_PORT_DVP1:
+        viaDVP1SetIOPadState(pScrn, ioPadOn ? 0x03 : 0x00);
+        break;
+    case VIA_DI_PORT_FPDPLOW:
+        viaFPDPLowSetIOPadState(pScrn, ioPadOn ? 0x03 : 0x00);
+        break;
+    case VIA_DI_PORT_FPDPHIGH:
+        viaFPDPHighSetIOPadState(pScrn, ioPadOn ? 0x03 : 0x00);
+        break;
+    case (VIA_DI_PORT_FPDPLOW |
+          VIA_DI_PORT_FPDPHIGH):
+        viaFPDPLowSetIOPadState(pScrn, ioPadOn ? 0x03 : 0x00);
+        viaFPDPHighSetIOPadState(pScrn, ioPadOn ? 0x03 : 0x00);
+        break;
+    case VIA_DI_PORT_LVDS1:
+        viaLVDS1SetIOPadSetting(pScrn, ioPadOn ? 0x03 : 0x00);
+        break;
+    case VIA_DI_PORT_LVDS2:
+        viaLVDS2SetIOPadSetting(pScrn, ioPadOn ? 0x03 : 0x00);
+        break;
+    case (VIA_DI_PORT_LVDS1 |
+          VIA_DI_PORT_LVDS2):
+        viaLVDS1SetIOPadSetting(pScrn, ioPadOn ? 0x03 : 0x00);
+        viaLVDS2SetIOPadSetting(pScrn, ioPadOn ? 0x03 : 0x00);
         break;
     default:
         break;
     }
 
-    if ((pVia->Chipset == VIA_CX700)
-        || (pVia->Chipset == VIA_VX800)
-        || (pVia->Chipset == VIA_VX855)
-        || (pVia->Chipset == VIA_VX900)) {
-
-        hwp->writeSeq(hwp, 0x5A, sr5a);
-        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                            "Restoring 3C5.5A[0].\n"));
-    }
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "DVI I/O Pad: %s\n",
+                ioPadOn ? "On": "Off");
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Exiting viaTMDSIOPadSetting.\n"));
+                        "Exiting %s.\n", __func__));
 }
 
 void
@@ -337,7 +299,8 @@ viaExtTMDSSetDisplaySource(ScrnInfoPtr pScrn, CARD8 displaySource)
 {
     vgaHWPtr hwp = VGAHWPTR(pScrn);
     VIAPtr pVia = VIAPTR(pScrn);
-    CARD8 sr12, sr13, sr5a;
+    CARD8 sr12, sr13;
+    CARD8 sr5a = 0x00;
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered viaExtTMDSSetDisplaySource.\n"));
@@ -397,7 +360,7 @@ viaExtTMDSSetDisplaySource(ScrnInfoPtr pScrn, CARD8 displaySource)
         if ((sr12 & 0x40) && (!(sr12 & 0x20))) {
             viaDVP0SetDisplaySource(pScrn, displaySource);
         } else if ((sr13 & 0x08) && (!(sr12 & 0x10))) {
-            viaDFPLowSetDisplaySource(pScrn, displaySource);
+            viaFPDPLowSetDisplaySource(pScrn, displaySource);
         } else {
             xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                         "None of the external ports were set up for "
@@ -417,7 +380,7 @@ viaExtTMDSSetDisplaySource(ScrnInfoPtr pScrn, CARD8 displaySource)
         if ((sr12 & 0x40) && (!(sr12 & 0x20))) {
             viaDVP0SetDisplaySource(pScrn, displaySource);
         } else if (!(sr12 & 0x10)) {
-            viaDFPLowSetDisplaySource(pScrn, displaySource);
+            viaFPDPLowSetDisplaySource(pScrn, displaySource);
         } else {
             xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                         "None of the external ports were set up for "
@@ -469,7 +432,8 @@ viaExtTMDSEnableIOPads(ScrnInfoPtr pScrn, CARD8 ioPadState)
 
     vgaHWPtr hwp = VGAHWPTR(pScrn);
     VIAPtr pVia = VIAPTR(pScrn);
-    CARD8 sr12, sr13, sr5a;
+    CARD8 sr12, sr13;
+    CARD8 sr5a = 0x00;
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered viaExtTMDSEnableIOPads.\n"));
@@ -501,7 +465,7 @@ viaExtTMDSEnableIOPads(ScrnInfoPtr pScrn, CARD8 ioPadState)
          *             1: DIP0 (Digital Interface Port 0) is used by
          *                a TV encoder */
         if (!(sr12 & 0x20)) {
-            viaDIP0EnableIOPads(pScrn, ioPadState);
+            viaDIP0SetIOPadState(pScrn, ioPadState);
         } else {
             xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                         "DIP0 was not set up for "
@@ -527,9 +491,9 @@ viaExtTMDSEnableIOPads(ScrnInfoPtr pScrn, CARD8 ioPadState)
          *             0: Dual 12-bit FPDP (Flat Panel Display Port)
          *             1: 24-bit FPDP (Flat Panel Display Port) */
         if ((sr12 & 0x40) && (!(sr12 & 0x20))) {
-            viaDVP0EnableIOPads(pScrn, ioPadState);
+            viaDVP0SetIOPadState(pScrn, ioPadState);
         } else if ((sr13 & 0x08) && (!(sr12 & 0x10))) {
-            viaDFPLowEnableIOPads(pScrn, ioPadState);
+            viaFPDPLowSetIOPadState(pScrn, ioPadState);
         } else {
             xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                         "None of the external ports were set up for "
@@ -547,9 +511,9 @@ viaExtTMDSEnableIOPads(ScrnInfoPtr pScrn, CARD8 ioPadState)
          *             0: DVP0 is used by a TMDS transmitter (DVI)
          *             1: DVP0 is used by a TV encoder */
         if ((sr12 & 0x40) && (!(sr12 & 0x20))) {
-            viaDVP0EnableIOPads(pScrn, ioPadState);
+            viaDVP0SetIOPadState(pScrn, ioPadState);
         } else if (!(sr12 & 0x10)) {
-            viaDFPLowEnableIOPads(pScrn, ioPadState);
+            viaFPDPLowSetIOPadState(pScrn, ioPadState);
         } else {
             xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                         "None of the external ports were set up for "
@@ -566,7 +530,7 @@ viaExtTMDSEnableIOPads(ScrnInfoPtr pScrn, CARD8 ioPadState)
          *             1: DVP1 is used as a capture port
          */
         if (!(sr13 & 0x40)) {
-            viaDVP1EnableIOPads(pScrn, ioPadState);
+            viaDVP1SetIOPadState(pScrn, ioPadState);
         } else {
             xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                         "DVP1 is not set up for TMDS "
@@ -600,7 +564,8 @@ viaExtTMDSSetClockDriveStrength(ScrnInfoPtr pScrn, CARD8 clockDriveStrength)
 {
     vgaHWPtr hwp = VGAHWPTR(pScrn);
     VIAPtr pVia = VIAPTR(pScrn);
-    CARD8 sr12, sr13, sr5a;
+    CARD8 sr12, sr13;
+    CARD8 sr5a = 0x00;
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered viaExtTMDSSetClockDriveStrength.\n"));
@@ -626,15 +591,6 @@ viaExtTMDSSetClockDriveStrength(ScrnInfoPtr pScrn, CARD8 clockDriveStrength)
                         "SR13: 0x%02X\n", sr13));
     switch (pVia->Chipset) {
     case VIA_CLE266:
-        /* 3C5.12[5] - FPD18 pin strapping
-         *             0: DIP0 (Digital Interface Port 0) is used by
-         *                a TMDS transmitter (DVI)
-         *             1: DIP0 (Digital Interface Port 0) is used by
-         *                a TV encoder */
-        if (!(sr12 & 0x20)) {
-            viaDIP0SetClockDriveStrength(pScrn, clockDriveStrength);
-        }
-
         break;
     case VIA_KM400:
     case VIA_K8M800:
@@ -700,7 +656,8 @@ viaExtTMDSSetDataDriveStrength(ScrnInfoPtr pScrn, CARD8 dataDriveStrength)
 {
     vgaHWPtr hwp = VGAHWPTR(pScrn);
     VIAPtr pVia = VIAPTR(pScrn);
-    CARD8 sr12, sr13, sr5a;
+    CARD8 sr12, sr13;
+    CARD8 sr5a = 0x00;
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered viaExtTMDSSetDataDriveStrength.\n"));
@@ -726,15 +683,6 @@ viaExtTMDSSetDataDriveStrength(ScrnInfoPtr pScrn, CARD8 dataDriveStrength)
                         "SR13: 0x%02X\n", sr13));
     switch (pVia->Chipset) {
     case VIA_CLE266:
-        /* 3C5.12[5] - FPD18 pin strapping
-         *             0: DIP0 (Digital Interface Port 0) is used by
-         *                a TMDS transmitter (DVI)
-         *             1: DIP0 (Digital Interface Port 0) is used by
-         *                a TV encoder */
-        if (!(sr12 & 0x20)) {
-            viaDIP0SetDataDriveStrength(pScrn, dataDriveStrength);
-        }
-
         break;
     case VIA_KM400:
     case VIA_K8M800:
@@ -798,7 +746,9 @@ viaExtTMDSSetDataDriveStrength(ScrnInfoPtr pScrn, CARD8 dataDriveStrength)
 static void
 via_tmds_create_resources(xf86OutputPtr output)
 {
+#ifdef HAVE_DEBUG
     ScrnInfoPtr pScrn = output->scrn;
+#endif /* HAVE_DEBUG */
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered via_tmds_create_resources.\n"));
@@ -837,7 +787,9 @@ via_tmds_dpms(xf86OutputPtr output, int mode)
 static void
 via_tmds_save(xf86OutputPtr output)
 {
+#ifdef HAVE_DEBUG
     ScrnInfoPtr pScrn = output->scrn;
+#endif /* HAVE_DEBUG */
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered via_tmds_save.\n"));
@@ -849,7 +801,9 @@ via_tmds_save(xf86OutputPtr output)
 static void
 via_tmds_restore(xf86OutputPtr output)
 {
+#ifdef HAVE_DEBUG
     ScrnInfoPtr pScrn = output->scrn;
+#endif /* HAVE_DEBUG */
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered via_tmds_restore.\n"));
@@ -882,7 +836,9 @@ static Bool
 via_tmds_mode_fixup(xf86OutputPtr output, DisplayModePtr mode,
                       DisplayModePtr adjusted_mode)
 {
+#ifdef HAVE_DEBUG
     ScrnInfoPtr pScrn = output->scrn;
+#endif /* HAVE_DEBUG */
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered via_tmds_mode_fixup.\n"));
@@ -932,15 +888,14 @@ via_tmds_mode_set(xf86OutputPtr output, DisplayModePtr mode,
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered via_tmds_mode_set.\n"));
 
-    /* Initialize VIA IGP integrated TMDS transmitter registers. */
-    viaTMDSInitRegisters(pScrn);
-
-    /* Set integrated TMDS transmitter synchronization polarity for
-     * both horizontal synchronization and vertical synchronization. */
-    viaTMDSSetSyncPolarity(pScrn, adjusted_mode);
-
     if (output->crtc) {
-        viaTMDSSetSource(pScrn, iga->index ? 0x01 : 0x00);
+        /* Initialize VIA IGP integrated TMDS transmitter registers. */
+        viaTMDSInitReg(pScrn);
+
+        /* Set integrated TMDS transmitter sync polarity. */
+        viaTMDSSyncPolarity(pScrn, adjusted_mode->Flags);
+
+        viaTMDSDisplaySource(pScrn, iga->index);
     }
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
@@ -950,43 +905,32 @@ via_tmds_mode_set(xf86OutputPtr output, DisplayModePtr mode,
 static xf86OutputStatus
 via_tmds_detect(xf86OutputPtr output)
 {
-    xf86MonPtr mon;
-    xf86OutputStatus status = XF86OutputStatusDisconnected;
     ScrnInfoPtr pScrn = output->scrn;
+    xf86MonPtr pMon;
+    xf86OutputStatus status = XF86OutputStatusDisconnected;
+    I2CBusPtr pI2CBus;
     VIAPtr pVia = VIAPTR(pScrn);
+    VIADisplayPtr pVIADisplay = pVia->pVIADisplay;
+    VIATMDSPtr pVIATMDS = (VIATMDSPtr) output->driver_private;
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered via_tmds_detect.\n"));
 
-    /* Check for DVI presence by sensing the TMDS receiver connected
-     * to the integrated TMDS transmitter. */
-    if (viaTMDSSense(pScrn)) {
+    if (pVIATMDS->i2cBus & VIA_I2C_BUS2) {
+        pI2CBus = pVIADisplay->pI2CBus2;
+    } else if (pVIATMDS->i2cBus & VIA_I2C_BUS3) {
+        pI2CBus = pVIADisplay->pI2CBus3;
+    } else {
+        pI2CBus = NULL;
+    }
 
-        if (!pVia->pI2CBus2) {
-            goto exit;
-        }
-
-        /* Assume that only I2C bus 2 is used for the DVI connected to the
-         * integrated TMDS transmitter. */
-        if (!xf86I2CProbeAddress(pVia->pI2CBus2, 0xA0)) {
-            xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                        "I2C device on I2C Bus 2 does not support EDID.\n");
-            goto exit;
-        }
-
-        xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                    "Obtaining EDID for DVI.\n");
-
-        /* Since DVI presence was established, access the I2C bus,
-         * in order to obtain EDID from the monitor. */
-        mon = xf86OutputGetEDID(output, pVia->pI2CBus2);
-
-        /* Is the interface type digital? */
-        if (mon && DIGITAL(mon->features.input_type)) {
+    if (pI2CBus) {
+        pMon = xf86OutputGetEDID(output, pI2CBus);
+        if (pMon && DIGITAL(pMon->features.input_type)) {
             status = XF86OutputStatusConnected;
+            xf86OutputSetEDID(output, pMon);
             xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
                         "Detected a monitor connected to DVI.\n");
-            xf86OutputSetEDID(output, mon);
         } else {
             xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
                         "Could not obtain EDID from a monitor "
@@ -994,7 +938,6 @@ via_tmds_detect(xf86OutputPtr output)
         }
     }
 
-exit:
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Exiting via_tmds_detect.\n"));
     return status;
@@ -1005,7 +948,9 @@ static Bool
 via_tmds_set_property(xf86OutputPtr output, Atom property,
                      RRPropertyValuePtr value)
 {
+#ifdef HAVE_DEBUG
     ScrnInfoPtr pScrn = output->scrn;
+#endif /* HAVE_DEBUG */
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered via_tmds_set_property.\n"));
@@ -1020,7 +965,9 @@ via_tmds_set_property(xf86OutputPtr output, Atom property,
 static Bool
 via_tmds_get_property(xf86OutputPtr output, Atom property)
 {
+#ifdef HAVE_DEBUG
     ScrnInfoPtr pScrn = output->scrn;
+#endif /* HAVE_DEBUG */
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered via_tmds_get_property.\n"));
@@ -1034,7 +981,9 @@ via_tmds_get_property(xf86OutputPtr output, Atom property)
 static void
 via_tmds_destroy(xf86OutputPtr output)
 {
+#ifdef HAVE_DEBUG
     ScrnInfoPtr pScrn = output->scrn;
+#endif /* HAVE_DEBUG */
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered via_tmds_destroy.\n"));
@@ -1073,166 +1022,276 @@ static const xf86OutputFuncsRec via_tmds_funcs = {
     .destroy            = via_tmds_destroy,
 };
 
+void
+viaTMDSProbe(ScrnInfoPtr pScrn)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+    VIAPtr pVia = VIAPTR(pScrn);
+    VIADisplayPtr pVIADisplay = pVia->pVIADisplay;
+    CARD8 sr13, sr5a;
 
-Bool
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaTMDSProbe.\n"));
+
+    /* Detect the presence of integrated TMDS transmitter. */
+    switch (pVia->Chipset) {
+    case VIA_CX700:
+    case VIA_VX800:
+        sr5a = hwp->readSeq(hwp, 0x5A);
+
+        /* Setting SR5A[0] to 1.
+         * This allows the reading out the alternative
+         * pin strapping information from SR12 and SR13. */
+        ViaSeqMask(hwp, 0x5A, BIT(0), BIT(0));
+
+        sr13 = hwp->readSeq(hwp, 0x13);
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                            "SR13: 0x%02X\n", sr13));
+
+        /* 3C5.13[7:6] - Integrated LVDS / DVI Mode Select
+         *               (DVP1D15-14 pin strapping)
+         *               00: LVDS1 + LVDS2
+         *               01: DVI + LVDS2
+         *               10: Dual LVDS Channel (High Resolution Panel)
+         *               11: One DVI only (decrease the clock jitter) */
+        /* Check for DVI presence using pin strappings.
+         * VIA Technologies NanoBook reference design based products
+         * have their pin strappings set to a wrong setting to communicate
+         * the presence of DVI, so it requires special handling here. */
+        if (pVIADisplay->isVIANanoBook) {
+                    pVIADisplay->intTMDSPresence = TRUE;
+                    pVIADisplay->intTMDSDIPort = VIA_DI_PORT_TMDS;
+                    pVIADisplay->intTMDSI2CBus = VIA_I2C_BUS2;
+                    pVIADisplay->mappedI2CBus |= VIA_I2C_BUS2;
+                    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                                "Integrated TMDS (DVI) transmitter detected.\n");
+        } else if (((!(sr13 & BIT(7))) && (sr13 & BIT(6)))
+                    || ((sr13 & BIT(7)) && (sr13 & BIT(6)))) {
+            pVIADisplay->intTMDSPresence = TRUE;
+            pVIADisplay->intTMDSDIPort = VIA_DI_PORT_TMDS;
+            pVIADisplay->intTMDSI2CBus = VIA_I2C_BUS2;
+            pVIADisplay->mappedI2CBus |= VIA_I2C_BUS2;
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Integrated TMDS (DVI) transmitter detected via pin strapping.\n");
+        } else {
+            pVIADisplay->intTMDSPresence = FALSE;
+            pVIADisplay->intTMDSDIPort = VIA_DI_PORT_NONE;
+            pVIADisplay->intTMDSI2CBus = VIA_I2C_NONE;
+        }
+
+        hwp->writeSeq(hwp, 0x5A, sr5a);
+        break;
+    default:
+        pVIADisplay->intTMDSPresence = FALSE;
+        pVIADisplay->intTMDSDIPort = VIA_DI_PORT_NONE;
+        pVIADisplay->intTMDSI2CBus = VIA_I2C_NONE;
+        break;
+    }
+
+     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaTMDSProbe.\n"));
+}
+
+/*
+ * Probe (pre-initialization detection) of external TMDS transmitters.
+ */
+void
+viaExtTMDSProbe(ScrnInfoPtr pScrn)
+{
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
+    VIAPtr pVia = VIAPTR(pScrn);
+    VIADisplayPtr pVIADisplay = pVia->pVIADisplay;
+    CARD8 sr12;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaExtTMDSProbe.\n"));
+
+    pVIADisplay->extTMDSPresence = FALSE;
+    pVIADisplay->extTMDSI2CBus = VIA_I2C_NONE;
+    pVIADisplay->extTMDSTransmitter = VIA_TMDS_NONE;
+
+    if ((!(pVIADisplay->extTMDSPresence)) &&
+        ((pVIADisplay->pI2CBus2) &&
+        (~(pVIADisplay->mappedI2CBus & VIA_I2C_BUS2)))) {
+        if (viaVT1632Probe(pScrn, pVIADisplay->pI2CBus2)) {
+            pVIADisplay->extTMDSPresence = TRUE;
+            pVIADisplay->extTMDSI2CBus = VIA_I2C_BUS2;
+            pVIADisplay->extTMDSTransmitter = VIA_TMDS_VT1632;
+            pVIADisplay->mappedI2CBus |= VIA_I2C_BUS2;
+        } else if (viaSiI164Probe(pScrn, pVIADisplay->pI2CBus2)) {
+            pVIADisplay->extTMDSPresence = TRUE;
+            pVIADisplay->extTMDSI2CBus = VIA_I2C_BUS2;
+            pVIADisplay->extTMDSTransmitter = VIA_TMDS_SII164;
+            pVIADisplay->mappedI2CBus |= VIA_I2C_BUS2;
+        }
+    }
+
+    if ((!(pVIADisplay->extTMDSPresence)) &&
+        ((pVIADisplay->pI2CBus3) &&
+            (~(pVIADisplay->mappedI2CBus & VIA_I2C_BUS3)))) {
+        if (viaVT1632Probe(pScrn, pVIADisplay->pI2CBus3)) {
+            pVIADisplay->extTMDSPresence = TRUE;
+            pVIADisplay->extTMDSI2CBus = VIA_I2C_BUS3;
+            pVIADisplay->extTMDSTransmitter = VIA_TMDS_VT1632;
+            pVIADisplay->mappedI2CBus |= VIA_I2C_BUS3;
+        } else if (viaSiI164Probe(pScrn, pVIADisplay->pI2CBus3)) {
+            pVIADisplay->extTMDSPresence = TRUE;
+            pVIADisplay->extTMDSI2CBus = VIA_I2C_BUS3;
+            pVIADisplay->extTMDSTransmitter = VIA_TMDS_SII164;
+            pVIADisplay->mappedI2CBus |= VIA_I2C_BUS3;
+        }
+    }
+
+    sr12 = hwp->readSeq(hwp, 0x12);
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "SR12: 0x%02X\n", sr12));
+    if (pVIADisplay->extTMDSPresence) {
+        switch (pVia->Chipset) {
+        case VIA_CLE266:
+
+            /* 3C5.12[4] - FPD17 pin strapping
+             *             0: TMDS transmitter (DVI) / capture device
+             *             1: Flat panel */
+            if (!(sr12 & BIT(4))) {
+                pVIADisplay->extTMDSDIPort = VIA_DI_PORT_DIP0;
+
+            /* 3C5.12[5] - FPD18 pin strapping
+             *             0: TMDS transmitter (DVI)
+             *             1: TV encoder */
+            } else if (!(sr12 & BIT(5))) {
+                pVIADisplay->extTMDSDIPort = VIA_DI_PORT_DIP1;
+            } else {
+                pVIADisplay->extTMDSDIPort = VIA_DI_PORT_NONE;
+            }
+
+            break;
+        case VIA_KM400:
+        case VIA_P4M800PRO:
+        case VIA_PM800:
+        case VIA_K8M800:
+            /* 3C5.12[6] - DVP0D6 pin strapping
+             *             0: Disable DVP0 (Digital Video Port 0) for
+             *                DVI or TV out use
+             *             1: Enable DVP0 (Digital Video Port 0) for
+             *                DVI or TV out use
+             * 3C5.12[5] - DVP0D5 pin strapping
+             *             0: TMDS transmitter (DVI)
+             *             1: TV encoder */
+            if ((sr12 & BIT(6)) && (!(sr12 & BIT(5)))) {
+                pVIADisplay->extTMDSDIPort = VIA_DI_PORT_DVP0;
+            } else {
+                pVIADisplay->extTMDSDIPort = VIA_DI_PORT_DVP1;
+            }
+
+            break;
+        case VIA_P4M890:
+        case VIA_K8M890:
+        case VIA_P4M900:
+            /* Assume DVP2 as DVP0. Hence, VIA_DI_PORT_DVP0
+             * is used. */
+            /* 3C5.12[6] - DVP2D6 pin strapping
+             *             0: Disable DVP2 (Digital Video Port 2)
+             *             1: Enable DVP2 (Digital Video Port 2)
+             * 3C5.12[5] - DVP2D5 pin strapping
+             *             0: TMDS transmitter (DVI)
+             *             1: TV encoder */
+            if ((sr12 & BIT(6)) && (!(sr12 & BIT(5)))) {
+                pVIADisplay->extTMDSDIPort = VIA_DI_PORT_DVP0;
+            } else {
+                pVIADisplay->extTMDSDIPort = VIA_DI_PORT_NONE;
+            }
+
+            break;
+        case VIA_CX700:
+        case VIA_VX800:
+        case VIA_VX855:
+        case VIA_VX900:
+            pVIADisplay->extTMDSDIPort = VIA_DI_PORT_DVP1;
+            break;
+        default:
+            pVIADisplay->extTMDSDIPort = VIA_DI_PORT_NONE;
+            break;
+        }
+    }
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaExtTMDSProbe.\n"));
+}
+
+void
 viaTMDSInit(ScrnInfoPtr pScrn)
 {
     xf86OutputPtr output;
-    vgaHWPtr hwp = VGAHWPTR(pScrn);
     VIAPtr pVia = VIAPTR(pScrn);
-    VIATMDSRecPtr pVIATMDSRec = NULL;
-    CARD8 sr13, sr5a;
-    Bool status = FALSE;
+    VIADisplayPtr pVIADisplay = pVia->pVIADisplay;
+    VIATMDSPtr pVIATMDS;
     char outputNameBuffer[32];
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered viaTMDSInit.\n"));
 
-    sr5a = hwp->readSeq(hwp, 0x5A);
-    ViaSeqMask(hwp, 0x5A, sr5a | 0x01, 0x01);
-    sr13 = hwp->readSeq(hwp, 0x13);
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "SR13: 0x%02X\n", sr13));
-    hwp->writeSeq(hwp, 0x5A, sr5a);
-
-    /* 3C5.13[7:6] - Integrated LVDS / DVI Mode Select
-     *               (DVP1D15-14 pin strapping)
-     *               00: LVDS1 + LVDS2
-     *               01: DVI + LVDS2
-     *               10: Dual LVDS Channel (High Resolution Panel)
-     *               11: One DVI only (decrease the clock jitter) */
-    /* Check for DVI presence using pin strappings.
-     * VIA Technologies NanoBook reference design based products
-     * have their pin strappings set to a wrong setting to communicate
-     * the presence of DVI, so it requires special handling here. */
-    if ((((~(sr13 & 0x80)) && (sr13 & 0x40))
-         || ((sr13 & 0x80) && (sr13 & 0x40)))
-       || (pVia->isVIANanoBook)) {
-
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "Integrated TMDS transmitter found via pin strapping.\n");
-    } else {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "Integrated TMDS transmitter not found.\n");
+    if (!pVIADisplay->intTMDSPresence) {
         goto exit;
     }
 
-    pVIATMDSRec = xnfcalloc(1, sizeof(VIATMDSRec));
-    if (!pVIATMDSRec) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                    "Failed to allocate working storage for integrated "
-                    "TMDS transmitter.\n");
+    pVIATMDS = (VIATMDSPtr) xnfcalloc(1, sizeof(VIATMDSRec));
+    if (!pVIATMDS) {
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                            "Failed to allocate storage for "
+                            "integrated TMDS (DVI) transmitter.\n"));
         goto exit;
     }
 
-    /* The code to dynamically designate the particular DVI (i.e., DVI-1,
+    /* The code to dynamically designate a particular DVI (i.e., DVI-1,
      * DVI-2, etc.) for xrandr was borrowed from xf86-video-r128 DDX. */
-    sprintf(outputNameBuffer, "DVI-%d", (pVia->numberDVI + 1));
+    sprintf(outputNameBuffer, "DVI-%d", (pVIADisplay->numberDVI + 1));
     output = xf86OutputCreate(pScrn, &via_tmds_funcs, outputNameBuffer);
     if (!output) {
-        free(pVIATMDSRec);
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                    "Failed to allocate X Server display output record for "
-                    "integrated TMDS transmitter.\n");
+        free(pVIATMDS);
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                            "Failed to create X Server display output "
+                            "for integrated TMDS (DVI) "
+                            "transmitter.\n"));
         goto exit;
     }
 
-    output->driver_private = pVIATMDSRec;
+    /* Increment the number of DVI connectors. */
+    pVIADisplay->numberDVI++;
+
+    /* Leaving a hint for mode setting and DPMS to know which port
+     * to access. For CX700 / VX700 and VX800 chipsets' integrated TMDS
+     * transmitter, it is fixed to LVDS1 (TMDS uses LVDS1 pins). */
+    pVIATMDS->diPort = pVIADisplay->intTMDSDIPort;
+
+    /* Hint about which I2C bus to access for obtaining EDID. */
+    pVIATMDS->i2cBus = pVIADisplay->intTMDSI2CBus;
+
+    output->driver_private = pVIATMDS;
 
     /* Since there are two (2) display controllers registered with the
      * X.Org Server and both IGA1 and IGA2 can handle DVI without any
      * limitations, possible_crtcs should be set to 0x3 (0b11) so that
      * either display controller can get assigned to handle DVI. */
-    output->possible_crtcs = (1 << 1) | (1 << 0);
+    output->possible_crtcs = BIT(1) | BIT(0);
 
     output->possible_clones = 0;
     output->interlaceAllowed = FALSE;
     output->doubleScanAllowed = FALSE;
 
-    pVia->numberDVI++;
-    status = TRUE;
 exit:
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Exiting viaTMDSInit.\n"));
-    return status;
 }
 
 void
-via_dvi_init(ScrnInfoPtr pScrn)
+viaExtTMDSInit(ScrnInfoPtr pScrn)
 {
-    VIAPtr pVia = VIAPTR(pScrn);
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaExtTMDSInit.\n"));
+
+    viaVT1632Init(pScrn);
+    viaSiI164Init(pScrn);
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Entered via_dvi_init.\n"));
-
-    if (!pVia->pI2CBus2 || !pVia->pI2CBus3) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                    "I2C Bus 2 or I2C Bus 3 does not exist.\n");
-        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "Exiting via_dvi_init.\n"));
-        return;
-    }
-
-    /* Check to see if we are dealing with the latest VIA chipsets. */
-    if ((pVia->Chipset == VIA_CX700)
-        || (pVia->Chipset == VIA_VX800)
-        || (pVia->Chipset == VIA_VX855)
-        || (pVia->Chipset == VIA_VX900)) {
-
-        if (!viaTMDSInit(pScrn)) {
-            xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Integrated TMDS transmitter for DVI not found.\n");
-        } else {
-            xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Integrated TMDS transmitter for DVI was "
-                        "initialized successfully.\n");
-        }
-    }
-
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                "Probing I2C Bus 2 for VT1632.\n");
-    if (!viaVT1632Init(pScrn, pVia->pI2CBus2)) {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "I2C Bus 2 was not initialized for DVI use.\n");
-    } else {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "VT1632 attached to I2C Bus 2 was initialized "
-                    "successfully for DVI use.\n");
-    }
-
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                "Probing I2C Bus 3 for VT1632.\n");
-    if (!viaVT1632Init(pScrn, pVia->pI2CBus3)) {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "I2C Bus 3 was not initialized for DVI use.\n");
-    } else {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "VT1632 attached to I2C Bus 3 was initialized "
-                    "successfully for DVI use.\n");
-    }
-
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                "Probing I2C Bus 2 for SiI 164.\n");
-    if (!viaSiI164Init(pScrn, pVia->pI2CBus2)) {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "I2C Bus 2 was not initialized for DVI use.\n");
-    } else {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "SiI 164 attached to I2C Bus 2 was initialized "
-                    "successfully for DVI use.\n");
-    }
-
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                "Probing I2C Bus 3 for SiI 164.\n");
-    if (!viaSiI164Init(pScrn, pVia->pI2CBus3)) {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "I2C Bus 3 was not initialized for DVI use.\n");
-    } else {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                    "SiI 164 attached to I2C Bus 3 was initialized "
-                    "successfully for DVI use.\n");
-    }
-
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Exiting via_dvi_init.\n"));
+                        "Exiting viaExtTMDSInit.\n"));
 }

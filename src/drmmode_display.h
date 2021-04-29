@@ -27,23 +27,24 @@
 #ifndef DRMMODE_DISPLAY_H
 #define DRMMODE_DISPLAY_H
 
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
+#include "xf86drm.h"
 #include "xf86drmMode.h"
 #endif
-#ifdef HAVE_UDEV
+#ifdef HAVE_LIBUDEV
 #include "libudev.h"
 #endif
 
 typedef struct {
     int fd;
     uint32_t fb_id;
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
     drmModeResPtr mode_res;
     drmModeFBPtr mode_fb;
     drmEventContext event_context;
 #endif
     ScrnInfoPtr scrn;
-#ifdef HAVE_UDEV
+#ifdef HAVE_LIBUDEV
     struct udev_monitor *uevent_monitor;
     InputHandlerProc uevent_handler;
 #endif
@@ -54,7 +55,7 @@ typedef struct {
 
 typedef struct {
     drmmode_ptr drmmode;
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
     drmModeCrtcPtr mode_crtc;
 #endif
     struct buffer_object *cursor_bo;
@@ -62,7 +63,7 @@ typedef struct {
     int index;
 } drmmode_crtc_private_rec, *drmmode_crtc_private_ptr;
 
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
 typedef struct {
     drmModePropertyPtr mode_prop;
     uint64_t value;
@@ -84,8 +85,10 @@ typedef struct {
 } drmmode_output_private_rec, *drmmode_output_private_ptr;
 #endif
 
-extern xf86CrtcPtr window_belongs_to_crtc(ScrnInfoPtr pScrn, int x, int y, int w, int h);
-extern Bool KMSCrtcInit(ScrnInfoPtr pScrn, drmmode_ptr drmmode);
+
+extern Bool drmmode_pre_init(ScrnInfoPtr pScrn, drmmode_ptr drmmode);
+
 extern void drmmode_uevent_init(ScrnInfoPtr scrn, drmmode_ptr drmmode);
 extern void drmmode_uevent_fini(ScrnInfoPtr scrn, drmmode_ptr drmmode);
+
 #endif

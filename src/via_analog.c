@@ -42,62 +42,85 @@
 
 
 /*
- * Enables or disables analog VGA output by controlling DAC
- * (Digital to Analog Converter) output state.
+ * Enables or disables analog (VGA) output.
  */
 static void
-viaAnalogOutput(ScrnInfoPtr pScrn, Bool outputState)
+viaAnalogPower(ScrnInfoPtr pScrn, Bool outputState)
 {
-    vgaHWPtr hwp = VGAHWPTR(pScrn);
-
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Entered viaAnalogOutput.\n"));
+                        "Entered viaAnalogPower.\n"));
 
-    /* This register controls analog VGA DAC output state. */
-    /* 3X5.47[2] - DACOFF Backdoor Register
-     *             0: DAC on
-     *             1: DAC off */
-    ViaCrtcMask(hwp, 0x47, outputState ? 0x00 : 0x04, 0x04);
+    viaAnalogSetPower(pScrn, outputState);
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                "Analog VGA Output: %s\n",
+                "Analog (VGA) Power: %s\n",
                 outputState ? "On" : "Off");
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Exiting viaAnalogOutput.\n"));
+                        "Exiting viaAnalogPower.\n"));
+}
+
+/*
+ * Set analog (VGA) sync polarity.
+ */
+static void
+viaAnalogSyncPolarity(ScrnInfoPtr pScrn, unsigned int flags)
+{
+    CARD8 syncPolarity = 0x00;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaAnalogSyncPolarity.\n"));
+
+    if (flags & V_NHSYNC) {
+        syncPolarity |= BIT(0);
+    }
+
+    if (flags & V_NVSYNC) {
+        syncPolarity |= BIT(1);
+    }
+
+    viaAnalogSetSyncPolarity(pScrn, syncPolarity);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "Analog (VGA) Horizontal Sync Polarity: %s\n",
+                (syncPolarity & BIT(0)) ? "-" : "+");
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "Analog (VGA) Vertical Sync Polarity: %s\n",
+                (syncPolarity & BIT(1)) ? "-" : "+");
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaAnalogSyncPolarity.\n"));
 }
 
 /*
  * Specifies IGA1 or IGA2 for analog VGA DAC source.
  */
 static void
-viaAnalogSetDisplaySource(ScrnInfoPtr pScrn, CARD8 displaySource)
+viaAnalogDisplaySource(ScrnInfoPtr pScrn, int index)
 {
-    vgaHWPtr hwp = VGAHWPTR(pScrn);
-    CARD8 value = displaySource;
+    CARD8 displaySource = index;
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Entered viaAnalogSetDisplaySource.\n"));
+                        "Entered viaAnalogDisplaySource.\n"));
 
-    ViaSeqMask(hwp, 0x16, value << 6, 0x40);
+    viaAnalogSetDisplaySource(pScrn, displaySource & 0x01);
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                "Analog VGA Display Output Source: IGA%d\n",
-                (value & 0x01) + 1);
+                "Analog (VGA) Display Source: IGA%d\n",
+                (displaySource & 0x01) + 1);
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Exiting viaAnalogSetDisplaySource.\n"));
+                        "Exiting viaAnalogDisplaySource.\n"));
 }
 
 /*
  * Intializes analog VGA related registers.
  */
 static void
-viaAnalogInit(ScrnInfoPtr pScrn)
+viaAnalogInitReg(ScrnInfoPtr pScrn)
 {
     vgaHWPtr hwp = VGAHWPTR(pScrn);
     VIAPtr pVia = VIAPTR(pScrn);
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Entered viaAnalogInit.\n"));
+                        "Entered viaAnalogInitReg.\n"));
 
     /* 3X5.37[7]   - DAC Power Save Control 1
      *               0: Depend on Rx3X5.37[5:4] setting
@@ -120,50 +143,109 @@ viaAnalogInit(ScrnInfoPtr pScrn)
     case VIA_VX800:
     case VIA_VX855:
     case VIA_VX900:
-        /* 3C5.5E[0] - CRT DACOFF Setting
-         *             1: CRT DACOFF controlled by 3C5.01[5] */
-        ViaSeqMask(hwp, 0x5E, 0x01, 0x01);
+        /* Make sure 3C5.01[5] does not turn off analog (VGA) DAC. */
+        viaAnalogSetDACOff(pScrn, FALSE);
+
         break;
     default:
         break;
     }
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Exiting viaAnalogInit.\n"));
+                        "Exiting viaAnalogInitReg.\n"));
 }
 
 /*
- * Sets the polarity of horizontal synchronization and vertical
- * synchronization.
+ * Detect a VGA connector.
+ *
+ * The code here was borrowed from VIA Technologies X.Org X Server
+ * DDX code. (In particular, from viaDetectCRTVsync function
+ * inside via_output.c.)
  */
-static void
-viaAnalogSetSyncPolarity(ScrnInfoPtr pScrn, DisplayModePtr mode)
+static Bool
+viaAnalogDetectConnector(ScrnInfoPtr pScrn)
 {
     vgaHWPtr hwp = VGAHWPTR(pScrn);
-    CARD8 miscRegister;
+    VIAPtr pVia = VIAPTR(pScrn);
+    Bool connectorDetected = FALSE;
+    CARD8 sr40, cr36, cr37, cr43, cr44, cr47;
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Entered viaAnalogSetSyncPolarity.\n"));
+                        "Entered viaAnalogDetectConnector.\n"));
 
-/* Set certain bits of miscellaneous output register
- * meant for IGA1. */
-    miscRegister = hwp->readMiscOut(hwp);
-    if (mode->Flags & V_NHSYNC) {
-        miscRegister |= 0x40;
-    } else {
-        miscRegister &= (~0x40);
+    sr40 = hwp->readSeq(hwp, 0x40);
+    cr36 = hwp->readCrtc(hwp, 0x36);
+    cr37 = hwp->readCrtc(hwp, 0x37);
+    cr43 = hwp->readCrtc(hwp, 0x43);
+    cr44 = hwp->readCrtc(hwp, 0x44);
+    cr47 = hwp->readCrtc(hwp, 0x47);
+
+    if ((pVia->Chipset == VIA_CX700)
+        || (pVia->Chipset == VIA_VX800)
+        || (pVia->Chipset == VIA_VX855)
+        || (pVia->Chipset == VIA_VX900)) {
+        ViaCrtcMask(hwp, 0x43, 0x90, BIT(7) | BIT(6) | BIT(5) | BIT(4));
+        hwp->writeCrtc(hwp, 0x44, 0x00);
     }
 
-    if (mode->Flags & V_NVSYNC) {
-        miscRegister |= 0x80;
-    } else {
-        miscRegister &= (~0x80);
+    /* Turn on DAC. */
+    ViaCrtcMask(hwp, 0x37, 0x04, 0xff);
+    ViaCrtcMask(hwp, 0x47, 0x00, BIT(2));
+
+    /* Power On DPMS. */
+    ViaCrtcMask(hwp, 0x36, 0x00, BIT(7) | BIT(6) | BIT(5) | BIT(4));
+
+    /* Wait for vblank. */
+    usleep(16);
+
+    /* Enable CRT Sense. */
+    ViaSeqMask(hwp, 0x40, BIT(7), BIT(7));
+
+    if ((pVia->Chipset == VIA_CX700)
+        || (pVia->Chipset == VIA_VX800)
+        || (pVia->Chipset == VIA_VX855)
+        || (pVia->Chipset == VIA_VX900)) {
+        ViaSeqMask(hwp, 0x40, 0x00, BIT(7));
     }
 
-    hwp->writeMiscOut(hwp, miscRegister);
+    /*
+    VT3324, VT3353: SR40[7]=1 --> SR40[7] = 0 --> check 3C2[4]
+    other: SR40[7]=1 --> check 3C2[4] --> SR40[7]=0
+    */
+    if (ViaVgahwIn(hwp, 0x3C2) & BIT(4)) {
+        connectorDetected = TRUE;
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                            "VGA connector detected.\n"));
+    } else {
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                            "VGA connector not detected.\n"));
+    }
+
+    if ((pVia->Chipset != VIA_CX700)
+        && (pVia->Chipset != VIA_VX800)
+        && (pVia->Chipset != VIA_VX855)
+        && (pVia->Chipset != VIA_VX900)) {
+        ViaSeqMask(hwp, 0x40, 0x00, BIT(7));
+    }
+
+    /* Restore */
+    hwp->writeCrtc(hwp, 0x47, cr47);
+
+    if ((pVia->Chipset == VIA_CX700)
+        || (pVia->Chipset == VIA_VX800)
+        || (pVia->Chipset == VIA_VX855)
+        || (pVia->Chipset == VIA_VX900)) {
+        hwp->writeCrtc(hwp, 0x44, cr44);
+        hwp->writeCrtc(hwp, 0x43, cr43);
+    }
+
+    hwp->writeCrtc(hwp, 0x37, cr37);
+    hwp->writeCrtc(hwp, 0x36, cr36);
+    hwp->writeSeq(hwp, 0x40, sr40);
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Exiting viaAnalogSetSyncPolarity.\n"));
+                        "Exiting viaAnalogDetectConnector.\n"));
+    return connectorDetected;
 }
 
 
@@ -182,14 +264,25 @@ via_analog_dpms(xf86OutputPtr output, int mode)
 
     switch (mode) {
     case DPMSModeOn:
-        viaAnalogOutput(pScrn, TRUE);
+        viaAnalogSetDPMSControl(pScrn, VIA_ANALOG_DPMS_ON);
+        viaAnalogPower(pScrn, TRUE);
         break;
     case DPMSModeStandby:
+        viaAnalogSetDPMSControl(pScrn, VIA_ANALOG_DPMS_STANDBY);
+        viaAnalogPower(pScrn, TRUE);
+        break;
     case DPMSModeSuspend:
+        viaAnalogSetDPMSControl(pScrn, VIA_ANALOG_DPMS_SUSPEND);
+        viaAnalogPower(pScrn, TRUE);
+        break;
     case DPMSModeOff:
-        viaAnalogOutput(pScrn, FALSE);
+        viaAnalogSetDPMSControl(pScrn, VIA_ANALOG_DPMS_OFF);
+        viaAnalogPower(pScrn, FALSE);
         break;
     default:
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                    "Invalid DPMS Mode: %d\n",
+                    mode);
         break;
     }
 
@@ -227,13 +320,31 @@ via_analog_mode_fixup(xf86OutputPtr output, DisplayModePtr mode,
 static void
 via_analog_prepare(xf86OutputPtr output)
 {
-    via_analog_dpms(output, DPMSModeOff);
+    ScrnInfoPtr pScrn = output->scrn;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered via_analog_prepare.\n"));
+
+    viaAnalogSetDPMSControl(pScrn, VIA_ANALOG_DPMS_OFF);
+    viaAnalogPower(pScrn, FALSE);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting via_analog_prepare.\n"));
 }
 
 static void
 via_analog_commit(xf86OutputPtr output)
 {
-    via_analog_dpms(output, DPMSModeOn);
+    ScrnInfoPtr pScrn = output->scrn;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered via_analog_commit.\n"));
+
+    viaAnalogSetDPMSControl(pScrn, VIA_ANALOG_DPMS_ON);
+    viaAnalogPower(pScrn, TRUE);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting via_analog_commit.\n"));
 }
 
 static void
@@ -247,9 +358,9 @@ via_analog_mode_set(xf86OutputPtr output, DisplayModePtr mode,
                         "Entered via_analog_mode_set.\n"));
 
     if (output->crtc) {
-        viaAnalogInit(pScrn);
-        viaAnalogSetSyncPolarity(pScrn, adjusted_mode);
-        viaAnalogSetDisplaySource(pScrn, iga->index ? 0x01 : 0x00);
+        viaAnalogInitReg(pScrn);
+        viaAnalogSyncPolarity(pScrn, adjusted_mode->Flags);
+        viaAnalogDisplaySource(pScrn, iga->index);
     }
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
@@ -259,84 +370,84 @@ via_analog_mode_set(xf86OutputPtr output, DisplayModePtr mode,
 static xf86OutputStatus
 via_analog_detect(xf86OutputPtr output)
 {
-    xf86OutputStatus status = XF86OutputStatusDisconnected;
     ScrnInfoPtr pScrn = output->scrn;
-    VIAPtr pVia = VIAPTR(pScrn);
-    xf86MonPtr mon;
+    xf86OutputStatus status = XF86OutputStatusDisconnected;
+    Bool connectorDetected;
 
-    /* Probe I2C Bus 1 to see if a VGA monitor is connected. */
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered via_analog_detect.\n"));
+
     xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                "Probing for a VGA monitor on I2C Bus 1.\n");
-    mon = xf86OutputGetEDID(output, pVia->pI2CBus1);
-    if (mon && (!mon->features.input_type)) {
-        xf86OutputSetEDID(output, mon);
-        status = XF86OutputStatusConnected;
+                "Probing for a VGA connector . . .\n");
+
+    connectorDetected = viaAnalogDetectConnector(pScrn);
+    if (!connectorDetected) {
         xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                    "Detected a VGA monitor on I2C Bus 1.\n");
+                    "VGA connector not detected.\n");
+        goto exit;
+    }
+
+    status = XF86OutputStatusConnected;
+    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                "VGA connector detected.\n");
+exit:
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting via_analog_detect.\n"));
+    return status;
+}
+
+static DisplayModePtr
+via_analog_get_modes(xf86OutputPtr output)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    xf86MonPtr pMon;
+    DisplayModePtr pDisplay_Mode = NULL;
+    I2CBusPtr pI2CBus;
+    VIAPtr pVia = VIAPTR(pScrn);
+    VIADisplayPtr pVIADisplay = pVia->pVIADisplay;
+    VIAAnalogPtr pVIAAnalog = (VIAAnalogPtr) output->driver_private;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered via_analog_get_modes.\n"));
+
+    if (pVIAAnalog->i2cBus & VIA_I2C_BUS1) {
+        pI2CBus = pVIADisplay->pI2CBus1;
     } else {
-        xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                    "Did not detect a VGA monitor on I2C Bus 1.\n");
+        pI2CBus = NULL;
+    }
 
-        /* Probe I2C Bus 2 to see if a VGA monitor is connected. */
-        xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                    "Probing for a VGA monitor on I2C Bus 2.\n");
-        mon = xf86OutputGetEDID(output, pVia->pI2CBus2);
-        if (mon && (!mon->features.input_type)) {
-            xf86OutputSetEDID(output, mon);
-            status = XF86OutputStatusConnected;
+    if (pI2CBus) {
+        pMon = xf86OutputGetEDID(output, pI2CBus);
+        if (pMon && (!pMon->features.input_type)) {
+            xf86OutputSetEDID(output, pMon);
+            pDisplay_Mode = xf86OutputGetEDIDModes(output);
             xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                        "Detected a VGA monitor on I2C Bus 2.\n");
-        } else {
-            xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                        "Did not detect a VGA monitor on I2C Bus 2.\n");
-
-            /* Perform manual detection of a VGA monitor since */
-            /* it was not detected via I2C buses. */
-            xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                        "Now perform manual detection of a VGA "
-                        "monitor.\n");
-            vgaHWPtr hwp = VGAHWPTR(pScrn);
-            CARD8 SR01 = hwp->readSeq(hwp, 0x01);
-            CARD8 SR40 = hwp->readSeq(hwp, 0x40);
-            CARD8 CR36 = hwp->readCrtc(hwp, 0x36);
-
-            /* We have to power on the display to detect it */
-            ViaSeqMask(hwp, 0x01, 0x00, 0x20);
-            ViaCrtcMask(hwp, 0x36, 0x00, 0xF0);
-
-            /* Wait for vblank */
-            usleep(16);
-
-            /* Detect the load on pins */
-            ViaSeqMask(hwp, 0x40, 0x80, 0x80);
-
-            if ((VIA_CX700 == pVia->Chipset) ||
-                (VIA_VX800 == pVia->Chipset) ||
-                (VIA_VX855 == pVia->Chipset) ||
-                (VIA_VX900 == pVia->Chipset))
-                ViaSeqMask(hwp, 0x40, 0x00, 0x80);
-
-            if (ViaVgahwIn(hwp, 0x3C2) & 0x20) {
-                status = XF86OutputStatusConnected;
-                xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                            "Detected a VGA monitor using manual "
-                            "detection method.\n");
-            }
-
-            if ((VIA_CX700 == pVia->Chipset) ||
-                (VIA_VX800 == pVia->Chipset) ||
-                (VIA_VX855 == pVia->Chipset) ||
-                (VIA_VX900 == pVia->Chipset))
-                ViaSeqMask(hwp, 0x40, 0x00, 0x80);
-
-            /* Restore previous state */
-            hwp->writeSeq(hwp, 0x40, SR40);
-            hwp->writeSeq(hwp, 0x01, SR01);
-            hwp->writeCrtc(hwp, 0x36, CR36);
+                        "Detected a monitor connected to VGA.\n");
+            goto exit;
         }
     }
 
-    return status;
+    if (pVIAAnalog->i2cBus & VIA_I2C_BUS2) {
+        pI2CBus = pVIADisplay->pI2CBus2;
+    } else {
+        pI2CBus = NULL;
+    }
+
+    if (pI2CBus) {
+        pMon = xf86OutputGetEDID(output, pI2CBus);
+        if (pMon && (!pMon->features.input_type)) {
+            xf86OutputSetEDID(output, pMon);
+            pDisplay_Mode = xf86OutputGetEDIDModes(output);
+            xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                        "Detected a monitor connected to VGA.\n");
+            goto exit;
+        }
+    }
+
+exit:
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting via_analog_get_modes.\n"));
+    return pDisplay_Mode;
 }
 
 #ifdef RANDR_12_INTERFACE
@@ -372,7 +483,7 @@ static const xf86OutputFuncsRec via_analog_funcs = {
     .commit             = via_analog_commit,
     .mode_set           = via_analog_mode_set,
     .detect             = via_analog_detect,
-    .get_modes          = xf86OutputGetEDIDModes,
+    .get_modes          = via_analog_get_modes,
 #ifdef RANDR_12_INTERFACE
     .set_property       = via_analog_set_property,
 #endif
@@ -383,28 +494,102 @@ static const xf86OutputFuncsRec via_analog_funcs = {
 };
 
 void
-via_analog_init(ScrnInfoPtr pScrn)
+viaAnalogProbe(ScrnInfoPtr pScrn)
 {
+    vgaHWPtr hwp = VGAHWPTR(pScrn);
     VIAPtr pVia = VIAPTR(pScrn);
-    VIABIOSInfoPtr pBIOSInfo = pVia->pBIOSInfo;
-    xf86OutputPtr output = NULL;
+    VIADisplayPtr pVIADisplay = pVia->pVIADisplay;
+    CARD8 sr13, sr5a;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaAnalogProbe.\n"));
+
+    /* Detect the presence of VGA. */
+    switch (pVia->Chipset) {
+    case VIA_CX700:
+    case VIA_VX800:
+    case VIA_VX855:
+    case VIA_VX900:
+        sr5a = hwp->readSeq(hwp, 0x5A);
+
+        /* Setting SR5A[0] to 1.
+         * This allows the reading out the alternative
+         * pin strapping information from SR12 and SR13. */
+        ViaSeqMask(hwp, 0x5A, BIT(0), BIT(0));
+
+        sr13 = hwp->readSeq(hwp, 0x13);
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                            "SR13: 0x%02X\n", sr13));
+        if (!(sr13 & BIT(2))) {
+            pVIADisplay->analogPresence = TRUE;
+            pVIADisplay->analogI2CBus = VIA_I2C_BUS2 | VIA_I2C_BUS1;
+            pVIADisplay->mappedI2CBus |= VIA_I2C_BUS2 | VIA_I2C_BUS1;
+            DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                                "Detected the presence of VGA.\n"));
+        } else {
+            pVIADisplay->analogPresence = FALSE;
+            pVIADisplay->analogI2CBus = VIA_I2C_NONE;
+        }
+
+        hwp->writeSeq(hwp, 0x5A, sr5a);
+        break;
+    default:
+        /* For all other devices, assume VGA presence. */
+        pVIADisplay->analogPresence = TRUE;
+        pVIADisplay->analogI2CBus = VIA_I2C_BUS2 | VIA_I2C_BUS1;
+        pVIADisplay->mappedI2CBus |= VIA_I2C_BUS2 | VIA_I2C_BUS1;
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                            "Detected the presence of VGA.\n"));
+        break;
+    }
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaAnalogProbe.\n"));
+}
+
+void
+viaAnalogInit(ScrnInfoPtr pScrn)
+{
+    xf86OutputPtr output;
+    VIAPtr pVia = VIAPTR(pScrn);
+    VIADisplayPtr pVIADisplay = pVia->pVIADisplay;
+    VIAAnalogPtr pVIAAnalog;
     char outputNameBuffer[32];
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Entered via_analog_init.\n"));
+                        "Entered viaAnalogInit.\n"));
 
-    if (!pVia->pI2CBus1 || !pVia->pI2CBus2) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                    "I2C Bus 1 or I2C Bus 2 does not exist.\n");
-        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                            "Exiting via_analog_init.\n"));
-        return;
+    if (!pVIADisplay->analogPresence) {
+        goto exit;
     }
+
+    pVIAAnalog = (VIAAnalogPtr) xnfcalloc(1, sizeof(VIAAnalogRec));
+    if (!pVIAAnalog) {
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                            "Failed to allocate storage for "
+                            "analog (VGA).\n"));
+        goto exit;
+     }
 
     /* The code to dynamically designate the output name for
      * xrandr was borrowed from xf86-video-r128 DDX. */
-    sprintf(outputNameBuffer, "VGA-%d", (pVia->numberVGA + 1));
+    sprintf(outputNameBuffer, "VGA-%d", (pVIADisplay->numberVGA + 1));
     output = xf86OutputCreate(pScrn, &via_analog_funcs, outputNameBuffer);
+    if (!output) {
+        free(pVIAAnalog);
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                    "Failed to allocate X Server display output "
+                    "record for analog (VGA).\n");
+        goto exit;
+    }
+
+    /* Increment the number of analog VGA connectors. */
+    pVIADisplay->numberVGA++;
+
+    /* Hint about which I2C bus to access for obtaining EDID. */
+    pVIAAnalog->i2cBus = pVIADisplay->analogI2CBus;
+
+    output->driver_private = pVIAAnalog;
 
     /* While there are two (2) display controllers registered with the
      * X.Org Server, it is often desirable to fix the analog VGA output
@@ -414,16 +599,13 @@ via_analog_init(ScrnInfoPtr pScrn)
      * With this arrangement, DVI should end up getting assigned to IGA2
      * since DVI can go to either display controller without limitations.
      * This should be the case for TV as well. */
-    output->possible_crtcs = (1 << 0);
+    output->possible_crtcs = BIT(1) | BIT(0);
 
     output->possible_clones = 0;
-    output->interlaceAllowed = TRUE;
+    output->interlaceAllowed = FALSE;
     output->doubleScanAllowed = FALSE;
-    pBIOSInfo->analog = output;
 
-    /* Increment the number of analog VGA connectors. */
-    pVia->numberVGA++;
-
+exit:
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Exiting via_analog_init.\n"));
+                        "Exiting viaAnalogInit.\n"));
 }

@@ -30,6 +30,7 @@
 #endif
 
 #include "via_driver.h"
+#include "via_ums.h"
 #include "via_sii164.h"
 
 static void
@@ -41,10 +42,10 @@ viaSiI164DumpRegisters(ScrnInfoPtr pScrn, I2CDevPtr pDev)
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered viaSiI164DumpRegisters.\n"));
 
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "SiI 164: dumping registers:\n"));
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Dumping SiI 164 registers.\n"));
     for (i = 0; i <= 0x0f; i++) {
         xf86I2CReadByte(pDev, i, &tmp);
-        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "SiI 164: 0x%02x: 0x%02x\n", i, tmp));
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "0x%02x: 0x%02x\n", i, tmp));
     }
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
@@ -153,12 +154,8 @@ viaSiI164RestoreRegisters(ScrnInfoPtr pScrn, I2CDevPtr pDev,
 static int
 viaSiI164CheckModeValidity(xf86OutputPtr output, DisplayModePtr pMode)
 {
-    ScrnInfoPtr pScrn = output->scrn;
     viaSiI164RecPtr pSiI164Rec = output->driver_private;
     int status = MODE_OK;
-
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, 
-                        "Entered viaSiI164CheckModeValidity.\n"));
 
     if (pMode->Clock < pSiI164Rec->DotclockMin) {
         status = MODE_CLOCK_LOW;
@@ -170,8 +167,6 @@ viaSiI164CheckModeValidity(xf86OutputPtr output, DisplayModePtr pMode)
     }
 
 exit:
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Exiting viaSiI164CheckModeValidity.\n"));
     return status;
 }
 
@@ -191,12 +186,14 @@ via_sii164_dpms(xf86OutputPtr output, int mode)
 
     switch (mode) {
     case DPMSModeOn:
-        viaSiI164Power(pScrn, pSiI164Rec->SiI164I2CDev, TRUE);
+        viaSiI164Power(pScrn, pSiI164Rec->pSiI164I2CDev, TRUE);
+        viaExtTMDSIOPadState(pScrn, pSiI164Rec->diPort, TRUE);
         break;
     case DPMSModeStandby:
     case DPMSModeSuspend:
     case DPMSModeOff:
-        viaSiI164Power(pScrn, pSiI164Rec->SiI164I2CDev, FALSE);
+        viaSiI164Power(pScrn, pSiI164Rec->pSiI164I2CDev, FALSE);
+        viaExtTMDSIOPadState(pScrn, pSiI164Rec->diPort, FALSE);
         break;
     default:
         break;
@@ -215,7 +212,7 @@ via_sii164_save(xf86OutputPtr output)
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered via_sii164_save.\n"));
 
-    viaSiI164SaveRegisters(pScrn, pSiI164Rec->SiI164I2CDev, pSiI164Rec);
+    viaSiI164SaveRegisters(pScrn, pSiI164Rec->pSiI164I2CDev, pSiI164Rec);
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Exiting via_sii164_save.\n"));
@@ -230,7 +227,7 @@ via_sii164_restore(xf86OutputPtr output)
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered via_sii164_restore.\n"));
 
-    viaSiI164RestoreRegisters(pScrn, pSiI164Rec->SiI164I2CDev,
+    viaSiI164RestoreRegisters(pScrn, pSiI164Rec->pSiI164I2CDev,
                                 pSiI164Rec);
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
@@ -253,11 +250,33 @@ via_sii164_mode_fixup(xf86OutputPtr output, DisplayModePtr mode,
 static void
 via_sii164_prepare(xf86OutputPtr output)
 {
+    ScrnInfoPtr pScrn = output->scrn;
+    viaSiI164RecPtr pSiI164Rec = output->driver_private;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered %s.\n", __func__));
+
+    viaSiI164Power(pScrn, pSiI164Rec->pSiI164I2CDev, FALSE);
+    viaExtTMDSIOPadState(pScrn, pSiI164Rec->diPort, FALSE);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting %s.\n", __func__));
 }
 
 static void
 via_sii164_commit(xf86OutputPtr output)
 {
+    ScrnInfoPtr pScrn = output->scrn;
+    viaSiI164RecPtr pSiI164Rec = output->driver_private;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered %s.\n", __func__));
+
+    viaSiI164Power(pScrn, pSiI164Rec->pSiI164I2CDev, TRUE);
+    viaExtTMDSIOPadState(pScrn, pSiI164Rec->diPort, TRUE);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting %s.\n", __func__));
 }
 
 static void
@@ -276,9 +295,9 @@ via_sii164_mode_set(xf86OutputPtr output, DisplayModePtr mode,
         viaExtTMDSSetDataDriveStrength(pScrn, 0x03);
         viaExtTMDSEnableIOPads(pScrn, 0x03);
 
-        viaSiI164DumpRegisters(pScrn, pSiI164Rec->SiI164I2CDev);
-        viaSiI164InitRegisters(pScrn, pSiI164Rec->SiI164I2CDev);
-        viaSiI164DumpRegisters(pScrn, pSiI164Rec->SiI164I2CDev);
+        viaSiI164DumpRegisters(pScrn, pSiI164Rec->pSiI164I2CDev);
+        viaSiI164InitRegisters(pScrn, pSiI164Rec->pSiI164I2CDev);
+        viaSiI164DumpRegisters(pScrn, pSiI164Rec->pSiI164I2CDev);
 
         viaExtTMDSSetDisplaySource(pScrn, iga->index ? 0x01 : 0x00);
     }
@@ -290,25 +309,63 @@ via_sii164_mode_set(xf86OutputPtr output, DisplayModePtr mode,
 static xf86OutputStatus
 via_sii164_detect(xf86OutputPtr output)
 {
-    xf86MonPtr mon;
-    xf86OutputStatus status = XF86OutputStatusDisconnected;
     ScrnInfoPtr pScrn = output->scrn;
-    viaSiI164RecPtr pSiI164Rec = output->driver_private;
+    xf86OutputStatus status = XF86OutputStatusDisconnected;
+    viaSiI164RecPtr pSiI164Rec = (viaSiI164RecPtr) output->driver_private;
+    Bool connectorDetected;
 
-    /* Check for the DVI presence via SiI 164 first before accessing
-     * I2C bus. */
-    if (viaSiI164Sense(pScrn, pSiI164Rec->SiI164I2CDev)) {
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered via_sii_164_detect.\n"));
 
-        /* Since DVI presence was established, access the I2C bus
-         * assigned to DVI. */
-        mon = xf86OutputGetEDID(output, pSiI164Rec->SiI164I2CDev->pI2CBus);
+    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                "Probing for a DVI connector . . .\n");
+
+    connectorDetected = viaSiI164Sense(pScrn, pSiI164Rec->pSiI164I2CDev);
+    if (!connectorDetected) {
+        xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                    "DVI connector not detected.\n");
+        goto exit;
+    }
+
+    status = XF86OutputStatusConnected;
+    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                "DVI connector detected.\n");
+
+exit:
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting via_sii_164_detect.\n"));
+    return status;
+}
+
+static DisplayModePtr
+via_sii164_get_modes(xf86OutputPtr output)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    xf86MonPtr pMon;
+    DisplayModePtr pDisplay_Mode = NULL;
+    I2CBusPtr pI2CBus;
+    VIAPtr pVia = VIAPTR(pScrn);
+    VIADisplayPtr pVIADisplay = pVia->pVIADisplay;
+    viaSiI164RecPtr pSiI164Rec = (viaSiI164RecPtr) output->driver_private;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered %s.\n", __func__));
+
+    if (pSiI164Rec->i2cBus & VIA_I2C_BUS2) {
+        pI2CBus = pVIADisplay->pI2CBus2;
+    } else if (pSiI164Rec->i2cBus & VIA_I2C_BUS3) {
+        pI2CBus = pVIADisplay->pI2CBus3;
+    } else {
+        pI2CBus = NULL;
+    }
+
+    if (pI2CBus) {
+        pMon = xf86OutputGetEDID(output, pI2CBus);
 
         /* Is the interface type digital? */
-        if (mon && DIGITAL(mon->features.input_type)) {
-            status = XF86OutputStatusConnected;
-            xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                        "Detected a monitor connected to DVI.\n");
-            xf86OutputSetEDID(output, mon);
+        if (pMon && DIGITAL(pMon->features.input_type)) {
+            xf86OutputSetEDID(output, pMon);
+            pDisplay_Mode = xf86OutputGetEDIDModes(output);
         } else {
             xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
                         "Could not obtain EDID from a monitor "
@@ -316,7 +373,9 @@ via_sii164_detect(xf86OutputPtr output)
         }
     }
 
-    return status;
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting %s.\n", __func__));
+    return pDisplay_Mode;
 }
 
 #ifdef RANDR_12_INTERFACE
@@ -352,7 +411,7 @@ const xf86OutputFuncsRec via_sii164_funcs = {
     .commit             = via_sii164_commit,
     .mode_set           = via_sii164_mode_set,
     .detect             = via_sii164_detect,
-    .get_modes          = xf86OutputGetEDIDModes,
+    .get_modes          = via_sii164_get_modes,
 #ifdef RANDR_12_INTERFACE
     .set_property       = via_sii164_set_property,
 #endif
@@ -363,20 +422,108 @@ const xf86OutputFuncsRec via_sii164_funcs = {
 };
 
 Bool
-viaSiI164Init(ScrnInfoPtr pScrn, I2CBusPtr pI2CBus)
+viaSiI164Probe(ScrnInfoPtr pScrn, I2CBusPtr pI2CBus)
+{
+    I2CDevPtr pI2CDevice = NULL;
+    I2CSlaveAddr i2cAddr = 0x70;
+    CARD8 i2cData;
+    CARD16 vendorID, deviceID;
+    Bool status = FALSE;
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Entered viaSiI164Probe.\n"));
+
+    if (!pI2CBus) {
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                            "Invalid I2C bus.\n"));
+        goto exit;
+    }
+
+    if (!xf86I2CProbeAddress(pI2CBus, i2cAddr)) {
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                            "I2C bus device not found.\n"));
+        goto exit;
+    }
+
+    pI2CDevice = xf86CreateI2CDevRec();
+    if (!pI2CDevice) {
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                            "Failed to create an I2C bus device "
+                            "record.\n"));
+        goto exit;
+    }
+
+    pI2CDevice->DevName = "SiI 164";
+    pI2CDevice->SlaveAddr = i2cAddr;
+    pI2CDevice->pI2CBus = pI2CBus;
+    if (!xf86I2CDevInit(pI2CDevice)) {
+        xf86DestroyI2CDevRec(pI2CDevice, TRUE);
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                            "Failed to initialize a device on "
+                            "I2C bus.\n"));
+        goto exit;
+    }
+
+    xf86I2CReadByte(pI2CDevice, 0, &i2cData);
+    vendorID = i2cData;
+    xf86I2CReadByte(pI2CDevice, 1, &i2cData);
+    vendorID |= i2cData << 8;
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Vendor ID: 0x%04x\n", vendorID));
+
+    xf86I2CReadByte(pI2CDevice, 2, &i2cData);
+    deviceID = i2cData;
+    xf86I2CReadByte(pI2CDevice, 3, &i2cData);
+    deviceID |= i2cData << 8;
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Device ID: 0x%04x\n", deviceID));
+
+    if ((vendorID != 0x0001) || (deviceID != 0x0006)) {
+        xf86DestroyI2CDevRec(pI2CDevice, TRUE);
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                            "SiI 164 external TMDS transmitter not "
+                            "detected.\n"));
+        goto exit;
+    }
+
+    status = TRUE;
+    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+                "SiI 164 external TMDS transmitter detected.\n");
+    xf86DestroyI2CDevRec(pI2CDevice, TRUE);
+exit:
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                        "Exiting viaSiI164Probe.\n"));
+    return status;
+}
+
+void
+viaSiI164Init(ScrnInfoPtr pScrn)
 {
     xf86OutputPtr output;
     VIAPtr pVia = VIAPTR(pScrn);
-    viaSiI164RecPtr pSiI164Rec = NULL;
-    I2CDevPtr pI2CDevice = NULL;
+    VIADisplayPtr pVIADisplay = pVia->pVIADisplay;
+    viaSiI164RecPtr pVIASiI164;
+    I2CBusPtr pI2CBus;
+    I2CDevPtr pI2CDevice;
     I2CSlaveAddr i2cAddr = 0x70;
-    CARD8 buf;
-    CARD16 vendorID, deviceID;
-    Bool status = FALSE;
+    CARD8 i2cData;
     char outputNameBuffer[32];
 
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Entered viaSiI164Init.\n"));
+
+    if ((!(pVIADisplay->extTMDSPresence)) ||
+        (pVIADisplay->extTMDSTransmitter != VIA_TMDS_SII164)) {
+        goto exit;
+    }
+
+    if (pVIADisplay->extTMDSI2CBus & VIA_I2C_BUS2) {
+        pI2CBus = pVIADisplay->pI2CBus2;
+    } else if (pVIADisplay->extTMDSI2CBus & VIA_I2C_BUS3) {
+        pI2CBus = pVIADisplay->pI2CBus3;
+    } else {
+        goto exit;
+    }
 
     if (!xf86I2CProbeAddress(pI2CBus, i2cAddr)) {
         xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
@@ -401,83 +548,65 @@ viaSiI164Init(ScrnInfoPtr pScrn, I2CBusPtr pI2CBus)
         goto exit;
     }
 
-    xf86I2CReadByte(pI2CDevice, 0, &buf);
-    vendorID = buf;
-    xf86I2CReadByte(pI2CDevice, 1, &buf);
-    vendorID |= buf << 8;
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Vendor ID: 0x%04x\n", vendorID));
-
-    xf86I2CReadByte(pI2CDevice, 2, &buf);
-    deviceID = buf;
-    xf86I2CReadByte(pI2CDevice, 3, &buf);
-    deviceID |= buf << 8;
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                        "Device ID: 0x%04x\n", deviceID));
-
-    if ((vendorID != 0x0001) || (deviceID != 0x0006)) {
+    pVIASiI164 = (viaSiI164RecPtr) xnfcalloc(1, sizeof(viaSiI164Rec));
+    if (!pVIASiI164) {
         xf86DestroyI2CDevRec(pI2CDevice, TRUE);
-        xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                    "SiI 164 external TMDS transmitter not detected.\n");
+        DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                            "Failed to allocate storage for "
+                            "SiI 164.\n"));
         goto exit;
     }
 
-    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-                "SiI 164 external TMDS transmitter detected.\n");
-
-    pSiI164Rec = xnfcalloc(1, sizeof(viaSiI164Rec));
-    if (!pSiI164Rec) {
+    /* The code to dynamically designate a particular DVI (i.e., DVI-1,
+     * DVI-2, etc.) for xrandr was borrowed from xf86-video-r128 DDX. */
+    sprintf(outputNameBuffer, "DVI-%d", (pVIADisplay->numberDVI + 1));
+    output = xf86OutputCreate(pScrn, &via_sii164_funcs, outputNameBuffer);
+    if (!output) {
+        free(pVIASiI164);
         xf86DestroyI2CDevRec(pI2CDevice, TRUE);
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                    "Failed to allocate working storage for SiI 164.\n");
+                    "Failed to create X Server display output "
+                    "for SiI 164.\n");
         goto exit;
     }
 
+    /* Increment the number of DVI connectors. */
+    pVIADisplay->numberDVI++;
+
     // Remembering which I2C bus is used for SiI 164.
-    pSiI164Rec->SiI164I2CDev = pI2CDevice;
+    pVIASiI164->pSiI164I2CDev = pI2CDevice;
 
-    xf86I2CReadByte(pI2CDevice, 0x06, &buf);
-    pSiI164Rec->DotclockMin = buf * 1000;
+    pVIASiI164->diPort = pVIADisplay->extTMDSDIPort;
 
-    xf86I2CReadByte(pI2CDevice, 0x07, &buf);
-    pSiI164Rec->DotclockMax = (buf + 65) * 1000;
+    /* Hint about which I2C bus to access for obtaining EDID. */
+    pVIASiI164->i2cBus = pVIADisplay->extTMDSI2CBus;
+
+    pVIASiI164->transmitter = pVIADisplay->extTMDSTransmitter;
+
+    xf86I2CReadByte(pI2CDevice, 0x06, &i2cData);
+    pVIASiI164->DotclockMin = i2cData * 1000;
+
+    xf86I2CReadByte(pI2CDevice, 0x07, &i2cData);
+    pVIASiI164->DotclockMax = (i2cData + 65) * 1000;
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Supported SiI 164 Dot Clock Range: "
                 "%d to %d MHz\n",
-                pSiI164Rec->DotclockMin / 1000,
-                pSiI164Rec->DotclockMax / 1000);
+                pVIASiI164->DotclockMin / 1000,
+                pVIASiI164->DotclockMax / 1000);
 
-    /* The code to dynamically designate the particular DVI (i.e., DVI-1,
-     * DVI-2, etc.) for xrandr was borrowed from xf86-video-r128 DDX. */
-    sprintf(outputNameBuffer, "DVI-%d", (pVia->numberDVI + 1));
-    output = xf86OutputCreate(pScrn, &via_sii164_funcs, outputNameBuffer);
-    if (!output) {
-        free(pSiI164Rec);
-        xf86DestroyI2CDevRec(pI2CDevice, TRUE);
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                    "Failed to allocate X Server display output record for "
-                    "SiI 164.\n");
-        goto exit;
-    }
-
-    output->driver_private = pSiI164Rec;
+    output->driver_private = pVIASiI164;
 
     /* Since there are two (2) display controllers registered with the
      * X.Org Server and both IGA1 and IGA2 can handle DVI without any
      * limitations, possible_crtcs should be set to 0x3 (0b11) so that
      * either display controller can get assigned to handle DVI. */
-    output->possible_crtcs = (1 << 1) | (1 << 0);
+    output->possible_crtcs = BIT(1) | BIT(0);
 
     output->possible_clones = 0;
     output->interlaceAllowed = FALSE;
     output->doubleScanAllowed = FALSE;
 
-    viaSiI164DumpRegisters(pScrn, pI2CDevice);
-
-    pVia->numberDVI++;
-    status = TRUE;
 exit:
     DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                         "Exiting viaSiI164Init.\n"));
-    return status;
 }

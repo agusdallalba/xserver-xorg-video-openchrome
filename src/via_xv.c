@@ -48,6 +48,8 @@
 #include "via_xvpriv.h"
 #include "fourcc.h"
 
+#include "via_eng_regs.h"
+
 /*
  * D E F I N E
  */
@@ -107,10 +109,6 @@ static int viaSetPortAttribute(ScrnInfoPtr, Atom, INT32, pointer);
 static int viaPutImage(ScrnInfoPtr, short, short, short, short, short, short,
     short, short, int, unsigned char *, short, short, Bool,
     RegionPtr, pointer, DrawablePtr);
-static void UVBlit(unsigned char *dest,
-    const unsigned char *uBuffer,
-    const unsigned char *vBuffer,
-    unsigned width, unsigned srcPitch, unsigned dstPitch, unsigned lines);
 static void nv12Blit(unsigned char *nv12Chroma,
     const unsigned char *uBuffer,
     const unsigned char *vBuffer,
@@ -143,13 +141,21 @@ static XF86VideoFormatRec FormatsG[NUM_FORMATS_G] = {
 
 #define NUM_ATTRIBUTES_G 6
 
+static char attributeXvColorkey[] = { "XV_COLORKEY" };
+static char attributeXvBrightness[] = { "XV_BRIGHTNESS" };
+static char attributeXvContrast[] = { "XV_CONTRAST" };
+static char attributeXvSaturation[] = { "XV_SATURATION" };
+static char attributeXvHue[] = { "XV_HUE" };
+static char attributeXvAutopaintColorkey[] =
+                                        { "XV_AUTOPAINT_COLORKEY" };
+
 static XF86AttributeRec AttributesG[NUM_ATTRIBUTES_G] = {
-    {XvSettable | XvGettable, 0, (1 << 24) - 1, "XV_COLORKEY"},
-    {XvSettable | XvGettable, 0, 10000, "XV_BRIGHTNESS"},
-    {XvSettable | XvGettable, 0, 20000, "XV_CONTRAST"},
-    {XvSettable | XvGettable, 0, 20000, "XV_SATURATION"},
-    {XvSettable | XvGettable, -180, 180, "XV_HUE"},
-    {XvSettable | XvGettable, 0, 1, "XV_AUTOPAINT_COLORKEY"}
+    {XvSettable | XvGettable,      0,  (1 << 24) - 1,          attributeXvColorkey},
+    {XvSettable | XvGettable,      0,          10000,          attributeXvBrightness},
+    {XvSettable | XvGettable,      0,          20000,          attributeXvContrast},
+    {XvSettable | XvGettable,      0,          20000,          attributeXvSaturation},
+    {XvSettable | XvGettable,   -180,            180,                 attributeXvHue},
+    {XvSettable | XvGettable,      0,              1,   attributeXvAutopaintColorkey}
 };
 
 #define NUM_IMAGES_G 7
@@ -239,7 +245,7 @@ static XF86ImageRec ImagesG[NUM_IMAGES_G] = {
 
 };
 
-static char *XvAdaptorName[XV_ADAPT_NUM] = {
+static const char *XvAdaptorName[XV_ADAPT_NUM] = {
     "XV_SWOV"
 };
 
@@ -250,6 +256,40 @@ static unsigned numAdaptPort[XV_ADAPT_NUM] = { 1 };
 /*
  *  F U N C T I O N
  */
+
+static xf86CrtcPtr
+window_belongs_to_crtc(ScrnInfoPtr pScrn, int x, int y, int w, int h)
+{
+    xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
+    int largest = 0, area = 0, i;
+    BoxRec crtc_area, overlap;
+    xf86CrtcPtr best = NULL;
+
+    for (i = 0; i < xf86_config->num_crtc; i++) {
+        xf86CrtcPtr crtc = xf86_config->crtc[i];
+
+        if (crtc->enabled) {
+            crtc_area.x1 = crtc->x;
+            crtc_area.x2 = crtc->x + xf86ModeWidth(&crtc->mode, crtc->rotation);
+            crtc_area.y1 = crtc->y;
+            crtc_area.y2 = crtc->y + xf86ModeHeight(&crtc->mode, crtc->rotation);
+            overlap.x1 = crtc_area.x1 > x ? crtc_area.x1 : x;
+            overlap.x2 = crtc_area.x2 < x + w ? crtc_area.x2 : x + w;
+            overlap.y1 = crtc_area.y1 > y ? crtc_area.y1 : y;
+            overlap.y2 = crtc_area.y2 < y ? crtc_area.y2 : y + h;
+
+            if (overlap.x1 >= overlap.x2 || overlap.y1 >= overlap.y2)
+                overlap.x1 = overlap.x2 = overlap.y1 = overlap.y2 = 0;
+
+            area = (overlap.x2 - overlap.x1) * (overlap.y2 - overlap.y1);
+            if (area > largest) {
+                area = largest;
+                best = crtc;
+            }
+        }
+    }
+    return best;
+}
 
 /*
  *   Decide if the mode support video overlay. This depends on the bandwidth
@@ -554,7 +594,7 @@ viaExitVideo(ScrnInfoPtr pScrn)
 
     DBG_DD(ErrorF(" via_xv.c : viaExitVideo : \n"));
 
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
     ViaCleanupXVMC(pScrn, viaAdaptPtr, XV_ADAPT_NUM);
 #endif
 
@@ -604,7 +644,7 @@ viaInitVideo(ScreenPtr pScreen)
     num_new = 0;
 
     pVia->useDmaBlit = FALSE;
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
     pVia->useDmaBlit = (pVia->directRenderingType == DRI_1) &&
     ((pVia->Chipset == VIA_CLE266) ||
         (pVia->Chipset == VIA_KM400) ||
@@ -662,7 +702,7 @@ viaInitVideo(ScreenPtr pScreen)
 
     if (num_adaptors) {
         xf86XVScreenInit(pScreen, allAdaptors, num_adaptors);
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
         ViaInitXVMC(pScreen);
 #endif
         viaSetColorSpace(pVia, 0, 0, 0, 0, TRUE);
@@ -678,7 +718,7 @@ viaSetupAdaptors(ScreenPtr pScreen, XF86VideoAdaptorPtr ** adaptors)
 {
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     int i, j, usedPorts, numPorts;
-    viaPortPrivRec *viaPortPriv;
+    viaPortPrivPtr pPriv;
     DevUnion *pdevUnion;
 
     DBG_DD(ErrorF(" via_xv.c : viaSetupAdaptors (viaSetupImageVideo): \n"));
@@ -698,7 +738,7 @@ viaSetupAdaptors(ScreenPtr pScreen, XF86VideoAdaptorPtr ** adaptors)
             return 0;
         numPorts = numAdaptPort[i];
 
-        viaPortPriv =
+        pPriv =
             (viaPortPrivPtr) xnfcalloc(numPorts, sizeof(viaPortPrivRec));
         pdevUnion = (DevUnion *) xnfcalloc(numPorts, sizeof(DevUnion));
 
@@ -721,7 +761,7 @@ viaSetupAdaptors(ScreenPtr pScreen, XF86VideoAdaptorPtr ** adaptors)
         /* The adapter can handle 1 port simultaneously */
         viaAdaptPtr[i]->nPorts = numPorts;
         viaAdaptPtr[i]->pPortPrivates = pdevUnion;
-        viaAdaptPtr[i]->pPortPrivates->ptr = (pointer) viaPortPriv;
+        viaAdaptPtr[i]->pPortPrivates->ptr = (pointer) pPriv;
         viaAdaptPtr[i]->nAttributes = NUM_ATTRIBUTES_G;
         viaAdaptPtr[i]->pAttributes = AttributesG;
 
@@ -736,28 +776,28 @@ viaSetupAdaptors(ScreenPtr pScreen, XF86VideoAdaptorPtr ** adaptors)
         viaAdaptPtr[i]->ReputImage = NULL;
         viaAdaptPtr[i]->QueryImageAttributes = viaQueryImageAttributes;
         for (j = 0; j < numPorts; ++j) {
-            viaPortPriv[j].dmaBounceBuffer = NULL;
-            viaPortPriv[j].dmaBounceStride = 0;
-            viaPortPriv[j].dmaBounceLines = 0;
-            viaPortPriv[j].colorKey = 0x0821;
-            viaPortPriv[j].autoPaint = TRUE;
-            viaPortPriv[j].brightness = 5000.;
-            viaPortPriv[j].saturation = 10000;
-            viaPortPriv[j].contrast = 10000;
-            viaPortPriv[j].hue = 0;
-            viaPortPriv[j].FourCC = 0;
-            viaPortPriv[j].xv_portnum = j + usedPorts;
-            viaPortPriv[j].xvErr = xve_none;
+            pPriv[j].dmaBounceBuffer = NULL;
+            pPriv[j].dmaBounceStride = 0;
+            pPriv[j].dmaBounceLines = 0;
+            pPriv[j].colorKey = 0x0821;
+            pPriv[j].autoPaint = TRUE;
+            pPriv[j].brightness = 5000.;
+            pPriv[j].saturation = 10000;
+            pPriv[j].contrast = 10000;
+            pPriv[j].hue = 0;
+            pPriv[j].FourCC = 0;
+            pPriv[j].xv_portnum = j + usedPorts;
+            pPriv[j].xvErr = xve_none;
 
 #ifdef X_USE_REGION_NULL
-            REGION_NULL(pScreen, &viaPortPriv[j].clip);
+            REGION_NULL(pScreen, &pPriv[j].clip);
 #else
-            REGION_INIT(pScreen, &viaPortPriv[j].clip, NullBox, 1);
+            REGION_INIT(pScreen, &pPriv[j].clip, NullBox, 1);
 #endif
         }
         usedPorts += j;
 
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
         viaXvMCInitXv(pScrn, viaAdaptPtr[i]);
 #endif
 
@@ -959,28 +999,6 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
     }
 }
 
-static void
-planar420cp(unsigned char *dst, const unsigned char *src, int dstPitch,
-            int w, int h, int i420)
-{
-    unsigned long srcUOffset, srcVOffset;
-
-    /*
-     * Blit luma component as a fake YUY2 assembler blit.
-     */
-    if (i420) {
-        srcVOffset  = w * h + (w >> 1) * (h >> 1);
-        srcUOffset = w * h;
-    } else {
-        srcUOffset  = w * h + (w >> 1) * (h >> 1);
-        srcVOffset = w * h;
-    }
-
-    (*viaFastVidCpy) (dst, src, dstPitch, w >> 1, h, 1);
-    UVBlit(dst + dstPitch * h, src + srcUOffset,
-            src + srcVOffset, w >> 1, w >> 1, dstPitch, h >> 1);
-}
-
 /*
  * Slow and dirty. NV12 blit.
  */
@@ -1006,7 +1024,7 @@ nv12cp(unsigned char *dst, const unsigned char *src, int dstPitch,
             src + srcVOffset, w >> 1, w >>1, dstPitch, h >> 1);
 }
 
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
 
 static int
 viaDmaBlitImage(VIAPtr pVia,
@@ -1017,7 +1035,6 @@ viaDmaBlitImage(VIAPtr pVia,
     Bool bounceBuffer;
     drm_via_dmablit_t blit;
     drm_via_blitsync_t *chromaSync = &blit.sync;
-    drm_via_blitsync_t lumaSync;
     unsigned char *base;
     unsigned char *bounceBase;
     unsigned bounceStride;
@@ -1096,8 +1113,6 @@ viaDmaBlitImage(VIAPtr pVia,
         sizeof(blit)))) ;
     if (err < 0)
         return -1;
-
-    lumaSync = blit.sync;
 
     if (id == FOURCC_YV12 || id == FOURCC_I420) {
         unsigned tmp = ALIGN_TO(width >> 1, 16);
@@ -1227,7 +1242,7 @@ viaPutImage(ScrnInfoPtr pScrn,
                 dstPitch = pVia->swov.SWDevice.dwPitch;
 
                 if (pVia->useDmaBlit) {
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
                     if (viaDmaBlitImage(pVia, pPriv, buf,
                         (CARD32) pVia->swov.SWDevice.dwSWPhysicalAddr[pVia->dwFrameNum & 1],
                         width, height, dstPitch, id)) {
@@ -1435,7 +1450,7 @@ viaQueryImageAttributes(ScrnInfoPtr pScrn,
             break;
         case FOURCC_XVMC:
             *h = (*h + 1) & ~1;
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
             size = viaXvMCPutImageSize(pScrn);
 #else
             size = 0;
@@ -1495,35 +1510,6 @@ VIAVidAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
     pVia->swov.panning_x = x;
     pVia->swov.panning_y = y;
 }
-
-/*
- * Blit the U and V Fields. Used to Flip the U V for I420.
- */
-
-static void
-UVBlit(unsigned char *dst,
-        const unsigned char *uBuffer,
-        const unsigned char *vBuffer,
-        unsigned width, unsigned srcPitch, unsigned dstPitch, unsigned lines)
-{
-    int i, j;
-
-    dstPitch >>= 1;
-
-    for(j = 0; j < lines; j++)
-    {
-        for(i = 0; i < width; i++)
-        {
-            dst[i] = (uBuffer[i] << 8) | (vBuffer[i] << 16);
-        }
-
-        dst += dstPitch;
-        uBuffer += srcPitch;
-        vBuffer += srcPitch;
-    }
-
-}
-
 
 /*
  * Blit the chroma field from one buffer to another while at the same time converting from

@@ -50,40 +50,6 @@
 #include <X11/extensions/dpms.h>
 #endif
 
-xf86CrtcPtr
-window_belongs_to_crtc(ScrnInfoPtr pScrn, int x, int y, int w, int h)
-{
-    xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
-    int largest = 0, area = 0, i;
-    BoxRec crtc_area, overlap;
-    xf86CrtcPtr best = NULL;
-
-    for (i = 0; i < xf86_config->num_crtc; i++) {
-        xf86CrtcPtr crtc = xf86_config->crtc[i];
-
-        if (crtc->enabled) {
-            crtc_area.x1 = crtc->x;
-            crtc_area.x2 = crtc->x + xf86ModeWidth(&crtc->mode, crtc->rotation);
-            crtc_area.y1 = crtc->y;
-            crtc_area.y2 = crtc->y + xf86ModeHeight(&crtc->mode, crtc->rotation);
-            overlap.x1 = crtc_area.x1 > x ? crtc_area.x1 : x;
-            overlap.x2 = crtc_area.x2 < x + w ? crtc_area.x2 : x + w;
-            overlap.y1 = crtc_area.y1 > y ? crtc_area.y1 : y;
-            overlap.y2 = crtc_area.y2 < y ? crtc_area.y2 : y + h;
-
-            if (overlap.x1 >= overlap.x2 || overlap.y1 >= overlap.y2)
-                overlap.x1 = overlap.x2 = overlap.y1 = overlap.y2 = 0;
-
-            area = (overlap.x2 - overlap.x1) * (overlap.y2 - overlap.y1);
-            if (area > largest) {
-                area = largest;
-                best = crtc;
-            }
-        }
-    }
-    return best;
-}
-
 static void
 drmmode_ConvertFromKMode(ScrnInfoPtr pScrn, drmModeModeInfo *kmode,
                             DisplayModePtr mode)
@@ -192,7 +158,8 @@ drmmode_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
     if (drmmode->fb_id == 0) {
         ret = drmModeAddFB(drmmode->fd, pScrn->virtualX, pScrn->virtualY,
                             pScrn->depth, pScrn->bitsPerPixel,
-                            drmmode->front_bo->pitch,
+                            pScrn->virtualX *
+                            ((pScrn->bitsPerPixel + 7) >> 3),
                             drmmode->front_bo->handle,
                             &drmmode->fb_id);
         if (ret < 0) {
@@ -227,8 +194,6 @@ drmmode_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
                            crtc->gamma_blue, crtc->gamma_size);
 #endif
 
-    if (pScrn->pScreen && drmmode->hwcursor)
-        xf86_reload_cursors(pScrn->pScreen);
 done:
     free(output_ids);
     return (ret < 0 ? FALSE : TRUE);
@@ -283,7 +248,6 @@ drmmode_load_cursor_argb (xf86CrtcPtr crtc, CARD32 *image)
 
     /* cursor should be mapped already */
     ptr = drm_bo_map(crtc->scrn, drmmode_crtc->cursor_bo);
-    memset(ptr, 0x00, drmmode_crtc->cursor_bo->size);
     memcpy(ptr, image, drmmode_crtc->cursor_bo->size);
     drm_bo_unmap(crtc->scrn, drmmode_crtc->cursor_bo);
 
@@ -400,7 +364,7 @@ drmmode_output_create_resources(xf86OutputPtr output)
         drmmode_prop = p->mode_prop;
 
         if (drmmode_prop->flags & DRM_MODE_PROP_RANGE) {
-            INT32 range[2];
+            INT32 prop_range[2];
             INT32 value = p->value;
 
             p->num_atoms = 1;
@@ -408,12 +372,12 @@ drmmode_output_create_resources(xf86OutputPtr output)
             if (!p->atoms)
                 continue;
             p->atoms[0] = MakeAtom(drmmode_prop->name, strlen(drmmode_prop->name), TRUE);
-            range[0] = drmmode_prop->values[0];
-            range[1] = drmmode_prop->values[1];
+            prop_range[0] = drmmode_prop->values[0];
+            prop_range[1] = drmmode_prop->values[1];
             err = RRConfigureOutputProperty(output->randr_output, p->atoms[0],
                                             FALSE, TRUE,
                                             drmmode_prop->flags & DRM_MODE_PROP_IMMUTABLE ? TRUE : FALSE,
-                                            2, range);
+                                            2, prop_range);
             if (err != 0) {
                 xf86DrvMsg(output->scrn->scrnIndex, X_ERROR,
                             "RRConfigureOutputProperty error, %d\n", err);
@@ -739,7 +703,8 @@ out_free_encoders:
     drmModeFreeConnector(koutput);
 }
 
-uint32_t find_clones(ScrnInfoPtr scrn, xf86OutputPtr output)
+static uint32_t
+find_clones(ScrnInfoPtr scrn, xf86OutputPtr output)
 {
     drmmode_output_private_ptr drmmode_output = output->driver_private, clone_drmout;
     xf86CrtcConfigPtr   xf86_config = XF86_CRTC_CONFIG_PTR(scrn);
@@ -793,11 +758,17 @@ drmmode_clones_init(ScrnInfoPtr scrn, drmmode_ptr drmmode)
     }
 }
 
-Bool KMSCrtcInit(ScrnInfoPtr pScrn, drmmode_ptr drmmode)
+static const
+xf86CrtcConfigFuncsRec via_xf86crtc_config_funcs = {
+    via_xf86crtc_resize
+};
+
+Bool drmmode_pre_init(ScrnInfoPtr pScrn, drmmode_ptr drmmode)
 {
     int i;
+    Bool ret;
 
-    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "KMSCrtcInit\n"));
+    xf86CrtcConfigInit(pScrn, &via_xf86crtc_config_funcs);
 
     drmmode->scrn = pScrn;
     drmmode->mode_res = drmModeGetResources(drmmode->fd);
@@ -814,10 +785,12 @@ Bool KMSCrtcInit(ScrnInfoPtr pScrn, drmmode_ptr drmmode)
 
     /* workout clones */
     drmmode_clones_init(pScrn, drmmode);
-    return TRUE;
+    ret = xf86InitialConfiguration(pScrn, TRUE);
+
+    return ret;
 }
 
-#ifdef HAVE_UDEV
+#ifdef HAVE_LIBUDEV
 static void
 drmmode_handle_uevents(int fd, void *closure)
 {
@@ -836,7 +809,7 @@ drmmode_handle_uevents(int fd, void *closure)
 
 void drmmode_uevent_init(ScrnInfoPtr scrn, drmmode_ptr drmmode)
 {
-#ifdef HAVE_UDEV
+#ifdef HAVE_LIBUDEV
     struct udev_monitor *mon;
     struct udev *u;
 
@@ -866,7 +839,7 @@ void drmmode_uevent_init(ScrnInfoPtr scrn, drmmode_ptr drmmode)
 
 void drmmode_uevent_fini(ScrnInfoPtr scrn, drmmode_ptr drmmode)
 {
-#ifdef HAVE_UDEV
+#ifdef HAVE_LIBUDEV
     if (drmmode->uevent_handler) {
         struct udev *u = udev_monitor_get_udev(drmmode->uevent_monitor);
 

@@ -30,7 +30,7 @@
 #include "xf86.h"
 #include "xf86_OSproc.h"
 
-#ifdef HAVE_DRI
+#ifdef OPENCHROMEDRI
 #include "xf86drm.h"
 #include "via_drmclient.h"
 #include "via_drm.h"
@@ -39,6 +39,8 @@
 
 #include <math.h>
 #include <unistd.h>
+
+#include "via_eng_regs.h"
 
 /*
  * Warning: this file contains revision checks which are CLE266-specific.
@@ -123,10 +125,10 @@ viaWaitHQVFlip(VIAPtr pVia)
 static void
 viaWaitHQVFlipClear(VIAPtr pVia, unsigned long dwData)
 {
+    unsigned count = 50000;
     CARD32 volatile *pdwState =
             (CARD32 volatile *)(pVia->MapBase + HQV_CONTROL);
     *pdwState = dwData;
-    unsigned count = 50000;
 
     while (--count && (*pdwState & HQV_FLIP_STATUS)) {
         VIASETREG(HQV_CONTROL, *pdwState | HQV_FLIP_STATUS);
@@ -683,7 +685,7 @@ viaOverlayHQVCalcZoomHeight(VIAPtr pVia,
                             HQV_V_TAP8_12221, HQV_V_TAP8_12221 };
     /* CARD32 HQVmini[5] = { 0, 0x0c000000, 0x0a000000, 0x09000000, 0x08800000 }; */
 
-    /*if (pVia->pBIOSInfo->scaleY)
+    /*if (pVia->pVIADisplay->scaleY)
      * {
      * dstHeight = dstHeight + 1;
      * } */
@@ -1126,7 +1128,7 @@ ViaYUVFillBlack(VIAPtr pVia, void *buf, int num)
 static long
 AddHQVSurface(ScrnInfoPtr pScrn, unsigned int numbuf, CARD32 fourcc)
 {
-    unsigned int i, width, height, pitch, fbsize, addr;
+    unsigned int i, height, pitch, fbsize, addr;
     BOOL isplanar;
     void *buf;
 
@@ -1142,12 +1144,11 @@ AddHQVSurface(ScrnInfoPtr pScrn, unsigned int numbuf, CARD32 fourcc)
     isplanar = ((fourcc == FOURCC_YV12) || (fourcc == FOURCC_I420) ||
                 (fourcc == FOURCC_XVMC));
 
-    width = pVia->swov.SWDevice.gdwSWSrcWidth;
     height = pVia->swov.SWDevice.gdwSWSrcHeight;
     pitch = pVia->swov.SWDevice.dwPitch;
     fbsize = pitch * height * (isplanar ? 2 : 1);
 
-    pVia->swov.HQVMem = drm_bo_alloc(pScrn, fbsize * numbuf, 1, TTM_PL_FLAG_VRAM);
+    pVia->swov.HQVMem = drm_bo_alloc(pScrn, fbsize * numbuf, 1, TTM_PL_VRAM);
     if (!pVia->swov.HQVMem)
         return BadAlloc;
     addr = pVia->swov.HQVMem->offset;
@@ -1200,7 +1201,7 @@ CreateSurface(ScrnInfoPtr pScrn, CARD32 FourCC, CARD16 Width,
     }
 
     if (doalloc) {
-        pVia->swov.SWfbMem = drm_bo_alloc(pScrn, fbsize * 2, 1, TTM_PL_FLAG_VRAM);
+        pVia->swov.SWfbMem = drm_bo_alloc(pScrn, fbsize * 2, 1, TTM_PL_VRAM);
         if (!pVia->swov.SWfbMem)
             return BadAlloc;
         addr = pVia->swov.SWfbMem->offset;
@@ -1211,7 +1212,8 @@ CreateSurface(ScrnInfoPtr pScrn, CARD32 FourCC, CARD16 Width,
         pVia->swov.SWDevice.dwSWPhysicalAddr[0] = addr;
         pVia->swov.SWDevice.dwSWPhysicalAddr[1] = addr + fbsize;
         pVia->swov.SWDevice.lpSWOverlaySurface[0] = buf;
-        pVia->swov.SWDevice.lpSWOverlaySurface[1] = buf + fbsize;
+        pVia->swov.SWDevice.lpSWOverlaySurface[1] =
+                                        (unsigned char*)buf + fbsize;
 
         if (isplanar) {
             pVia->swov.SWDevice.dwSWCrPhysicalAddr[0] =
@@ -1751,10 +1753,10 @@ SetVideoWindow(ScrnInfoPtr pScrn, unsigned long videoFlag,
      * So, we need to adjust the Y top and bottom position.
      *
     if (videoFlag & VIDEO_1_INUSE) {
-        if (pBIOSInfo->SetDVI && pBIOSInfo->scaleY) {
-            top = (pUpdate->DstTop * pBIOSInfo->Panel->NativeMode->Height
+        if (pVIADisplay->SetDVI && pVIADisplay->scaleY) {
+            top = (pUpdate->DstTop * pVIADisplay->Panel->NativeMode->Height
                    / pScrn->currentMode->VDisplay);
-            bottom = (pUpdate->DstBottom * pBIOSInfo->Panel->NativeMode->Height
+            bottom = (pUpdate->DstBottom * pVIADisplay->Panel->NativeMode->Height
                       / pScrn->currentMode->VDisplay);
         }
     }*/
@@ -1830,10 +1832,10 @@ Upd_Video(xf86CrtcPtr crtc, unsigned long videoFlag,
                   pUpdate->DstTop, pUpdate->DstBottom));
 
     dstWidth = pUpdate->DstRight - pUpdate->DstLeft;
-	/*if (pBIOSInfo->lvds && pBIOSInfo->lvds->status == XF86OutputStatusConnected &&
-		pBIOSInfo->Panel->Scale) {
+	/*if (pVIADisplay->lvds && pVIADisplay->lvds->status == XF86OutputStatusConnected &&
+		pVIADisplay->Panel->Scale) {
         * FIXME: We need to determine if the panel is using V1 or V3 *
-        float hfactor = (float)pBIOSInfo->Panel->NativeMode->Width
+        float hfactor = (float)pVIADisplay->Panel->NativeMode->Width
                         / pScrn->currentMode->HDisplay;
         dstWidth *= hfactor;
     }*/
